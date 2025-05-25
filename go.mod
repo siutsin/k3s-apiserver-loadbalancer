@@ -1,6 +1,6 @@
 module github.com/siutsin/k3s-apiserver-loadbalancer
 
-go 1.24
+go 1.24.0
 
 godebug default=go1.24
 
