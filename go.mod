@@ -1,8 +1,8 @@
 module github.com/siutsin/k3s-apiserver-loadbalancer
 
-go 1.23.0
+go 1.24
 
-godebug default=go1.23
+godebug default=go1.24
 
 require (
 	github.com/onsi/ginkgo/v2 v2.22.0
