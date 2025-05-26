@@ -12,13 +12,13 @@ on:
       - 'go.mod'
       - 'go.sum'
 
-permissions:
-  contents: read
-
 jobs:
   lint:
-    name: Run on Ubuntu
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
     steps:
       - name: Clone the code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
