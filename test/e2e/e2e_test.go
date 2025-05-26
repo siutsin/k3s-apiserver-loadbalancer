@@ -24,8 +24,8 @@ import (
 	"path/filepath"
 	"time"
 
-	ginkgo "github.com/onsi/ginkgo/v2"
-	gomega "github.com/onsi/gomega"
+	"github.com/onsi/ginkgo/v2"
+	"github.com/onsi/gomega"
 
 	"github.com/siutsin/k3s-apiserver-loadbalancer/test/utils"
 )
@@ -64,6 +64,12 @@ var _ = ginkgo.Describe("Manager", ginkgo.Ordered, func() {
 		cmd = exec.Command("make", "install")
 		_, err = utils.Run(cmd)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Failed to install CRDs")
+
+		ginkgo.By("verifying that the kubernetes service in default namespace is ClusterIP")
+		cmd = exec.Command("kubectl", "get", "service", "kubernetes", "-n", "default", "-o", "jsonpath={.spec.type}")
+		output, err := utils.Run(cmd)
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+		gomega.Expect(output).To(gomega.Equal("ClusterIP"), "Kubernetes service should be of type ClusterIP")
 
 		ginkgo.By("deploying the controller-manager")
 		cmd = exec.Command("make", "deploy", fmt.Sprintf("IMG=%s", projectImage))
@@ -295,6 +301,17 @@ var _ = ginkgo.Describe("Manager", ginkgo.Ordered, func() {
 			gomega.Expect(metricsOutput).To(gomega.ContainSubstring(
 				"controller_runtime_reconcile_total",
 			))
+
+			ginkgo.By("verifying that the kubernetes service is now LoadBalancer type")
+			verifyServiceType := func(g gomega.Gomega) {
+				cmd := exec.Command("kubectl", "get", "service", "kubernetes",
+					"-n", "default",
+					"-o", "jsonpath={.spec.type}")
+				output, err := utils.Run(cmd)
+				g.Expect(err).NotTo(gomega.HaveOccurred())
+				g.Expect(output).To(gomega.Equal("LoadBalancer"), "kubernetes service should be LoadBalancer type")
+			}
+			gomega.Eventually(verifyServiceType, "30s", "1s").Should(gomega.Succeed())
 		})
 
 		// +kubebuilder:scaffold:e2e-webhooks-checks

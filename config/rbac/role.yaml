@@ -5,28 +5,12 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - core.siutsin.com
+  - ""
   resources:
-  - servicewatchers
+  - services
   verbs:
-  - create
-  - delete
   - get
   - list
   - patch
   - update
   - watch
-- apiGroups:
-  - core.siutsin.com
-  resources:
-  - servicewatchers/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - core.siutsin.com
-  resources:
-  - servicewatchers/status
-  verbs:
-  - get
-  - patch
-  - update
