@@ -25,7 +25,7 @@ jobs:
       - name: Clone the code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
-          persist-credentials: true # required for private repositories
+          persist-credentials: false
 
       - name: Bump version and push tag
         id: bump_version
