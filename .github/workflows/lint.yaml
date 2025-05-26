@@ -12,7 +12,8 @@ on:
       - 'go.mod'
       - 'go.sum'
 
-permissions: { }
+permissions:
+  contents: read
 
 jobs:
   lint:

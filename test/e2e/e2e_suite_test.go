@@ -22,8 +22,8 @@ import (
 	"os/exec"
 	"testing"
 
-	ginkgo "github.com/onsi/ginkgo/v2"
-	gomega "github.com/onsi/gomega"
+	"github.com/onsi/ginkgo/v2"
+	"github.com/onsi/gomega"
 
 	"github.com/siutsin/k3s-apiserver-loadbalancer/test/utils"
 )
@@ -67,7 +67,7 @@ var _ = ginkgo.BeforeSuite(func() {
 	// The tests-e2e are intended to run on a temporary cluster that is created and destroyed for testing.
 	// To prevent errors when tests run in environments with CertManager already installed,
 	// we check for its presence before execution.
-	// Setup CertManager before the suite if not skipped and if not already installed
+	// Set up CertManager before the suite if not skipped and if not already installed
 	if !skipCertManagerInstall {
 		ginkgo.By("checking if cert manager is installed already")
 		isCertManagerAlreadyInstalled = utils.IsCertManagerCRDsInstalled()

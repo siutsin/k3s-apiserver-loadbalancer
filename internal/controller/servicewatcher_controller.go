@@ -19,12 +19,11 @@ package controller
 import (
 	"context"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-
-	corev1alpha1 "github.com/siutsin/k3s-apiserver-loadbalancer/api/v1alpha1"
 )
 
 // ServiceWatcherReconciler reconciles a ServiceWatcher object
@@ -33,31 +32,43 @@ type ServiceWatcherReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=core.siutsin.com,resources=servicewatchers,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=core.siutsin.com,resources=servicewatchers/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=core.siutsin.com,resources=servicewatchers/finalizers,verbs=update
+// +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;update;patch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the ServiceWatcher object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
+// The ServiceWatcher objects against the actual cluster state and then
+// performs operations to make the cluster state reflect the state specified by
 // the user.
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.20.4/pkg/reconcile
-func (r *ServiceWatcherReconciler) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Result, error) {
-	_ = logf.FromContext(ctx)
+func (r *ServiceWatcherReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	log := logf.FromContext(ctx).WithValues("namespace", req.Namespace, "name", req.Name)
+	var service corev1.Service
 
-	// TODO(user): your logic here
-
+	if err := r.Get(ctx, req.NamespacedName, &service); err != nil {
+		log.Error(err, "unable to fetch Service")
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+	if service.Namespace == "default" && service.Name == "kubernetes" && service.Spec.Type == corev1.ServiceTypeClusterIP {
+		log.Info("Service has been updated", "service", service.Name, "type", service.Spec.Type)
+		originalResourceVersion := service.ResourceVersion
+		service.Spec.Type = corev1.ServiceTypeLoadBalancer
+		// Ensure the resource version matches to prevent race conditions and ensure consistency when
+		// multiple clients try to update the same resource simultaneously
+		service.ResourceVersion = originalResourceVersion
+		if err := r.Update(ctx, &service); err != nil {
+			log.Error(err, "failed to update Service to LoadBalancer")
+			return ctrl.Result{}, err
+		}
+		log.Info("Service has been updated to LoadBalancer", "service", service.Name, "type", service.Spec.Type)
+	}
 	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *ServiceWatcherReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&corev1alpha1.ServiceWatcher{}).
-		Named("servicewatcher").
+		For(&corev1.Service{}).
 		Complete(r)
 }
