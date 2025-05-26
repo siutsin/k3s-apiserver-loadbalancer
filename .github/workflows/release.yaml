@@ -7,7 +7,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}-kubernetes-service-patcher
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   publish-docker-image:
