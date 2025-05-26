@@ -1,22 +1,38 @@
 # k3s-apiserver-loadbalancer
-// TODO(user): Add simple overview of use/purpose
+
+An operator to watch the `kubernetes` service in the `default` namespace and update the service type to `LoadBalancer`
+instead of `ClusterIP`.
 
 ## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
+
+The `k3s-apiserver-loadbalancer` operator monitors the default `kubernetes` service in the `default` namespace and
+automatically updates its type from `ClusterIP` to`LoadBalancer`. This is particularly useful in environments like k3s,
+where the API server runs on the host, and the service type needs to be adjusted to ensure proper external access to the
+API server.
+
+In environments like k3s, where the API server is not running as a pod but directly on the host, it’s not trivial to
+create another service that selects the API server nodes. This operator simplifies the process by automatically updating
+the existing `kubernetes` service, ensuring it is consistently configured as a `LoadBalancer`.
+
+The external IP of the `LoadBalancer` should be configured by a separate component such as Cilium's IP Pool with L2
+announcement or MetalLB in L2 mode. These components handle the allocation and advertisement for external IPs to provide
+external access to the `LoadBalancer` service.
 
 ## Getting Started
 
 ### Prerequisites
+
 - go version v1.24.0+
-- docker version 17.03+.
-- kubectl version v1.11.3+.
-- Access to a Kubernetes v1.11.3+ cluster.
+- docker version 28.1.1+.
+- kubectl version v1.33.1+.
+- Access to a Kubernetes v1.33.1+ cluster.
 
 ### To Deploy on the cluster
+
 **Build and push your image to the location specified by `IMG`:**
 
 ```sh
-make docker-build docker-push IMG=<some-registry>/k3s-apiserver-loadbalancer:tag
+make docker-build docker-push IMG=ghcr.io/siutsin/k3s-apiserver-loadbalancer:v1.0.0
 ```
 
 **NOTE:** This image ought to be published in the personal registry you specified.
@@ -32,11 +48,11 @@ make install
 **Deploy the Manager to the cluster with the image specified by `IMG`:**
 
 ```sh
-make deploy IMG=<some-registry>/k3s-apiserver-loadbalancer:tag
+make deploy IMG=ghcr.io/siutsin/k3s-apiserver-loadbalancer:v1.0.0
 ```
 
 > **NOTE**: If you encounter RBAC errors, you may need to grant yourself cluster-admin
-privileges or be logged in as admin.
+> privileges or be logged in as admin.
 
 **Create instances of your solution**
 You can apply the samples (examples) from the config/sample:
@@ -45,9 +61,10 @@ You can apply the samples (examples) from the config/sample:
 kubectl apply -k config/samples/
 ```
 
->**NOTE**: Ensure that the samples has default values to test it out.
+> **NOTE**: Ensure that the samples have default values to test it out.
 
 ### To Uninstall
+
 **Delete the instances (CRs) from the cluster:**
 
 ```sh
@@ -68,68 +85,23 @@ make undeploy
 
 ## Project Distribution
 
-Following the options to release and provide this solution to the users.
-
-### By providing a bundle with all YAML files
+Following are the steps to build the installer and distribute this project to users.
 
 1. Build the installer for the image built and published in the registry:
 
-```sh
-make build-installer IMG=<some-registry>/k3s-apiserver-loadbalancer:tag
-```
+    ```sh
+    make build-installer IMG=ghcr.io/siutsin/k3s-apiserver-loadbalancer:v1.0.0
+    ```
 
-**NOTE:** The makefile target mentioned above generates an 'install.yaml'
-file in the dist directory. This file contains all the resources built
-with Kustomize, which are necessary to install this project without its
-dependencies.
+   NOTE: The makefile target mentioned above generates an 'install.yaml'
+   file in the dist directory. This file contains all the resources built
+   with Kustomize, which are necessary to install this project without
+   its dependencies.
 
 2. Using the installer
 
-Users can just run 'kubectl apply -f <URL for YAML BUNDLE>' to install
-the project, i.e.:
+   Users can just run kubectl apply -f $URL_OF_YAML_BUNDLE to install the project, i.e.:
 
-```sh
-kubectl apply -f https://raw.githubusercontent.com/<org>/k3s-apiserver-loadbalancer/<tag or branch>/dist/install.yaml
-```
-
-### By providing a Helm Chart
-
-1. Build the chart using the optional helm plugin
-
-```sh
-kubebuilder edit --plugins=helm/v1-alpha
-```
-
-2. See that a chart was generated under 'dist/chart', and users
-can obtain this solution from there.
-
-**NOTE:** If you change the project, you need to update the Helm Chart
-using the same command above to sync the latest changes. Furthermore,
-if you create webhooks, you need to use the above command with
-the '--force' flag and manually ensure that any custom configuration
-previously added to 'dist/chart/values.yaml' or 'dist/chart/manager/manager.yaml'
-is manually re-applied afterwards.
-
-## Contributing
-// TODO(user): Add detailed information on how you would like others to contribute to this project
-
-**NOTE:** Run `make help` for more information on all potential `make` targets
-
-More information can be found via the [Kubebuilder Documentation](https://book.kubebuilder.io/introduction.html)
-
-## License
-
-Copyright 2025.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
+    ```sh
+    kubectl apply -f https://raw.githubusercontent.com/siutsin/otaru/master/applications/k3s-apiserver-loadbalancer/dist/install.yaml
+    ```
