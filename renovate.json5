@@ -10,4 +10,7 @@
   },
   minimumReleaseAge: '3 days',
   rebaseWhen: 'behind-base-branch',
+  ignorePaths: [
+    'config/manager/kustomization.yaml',
+  ],
 }
