@@ -45,9 +45,8 @@ const metricsRoleBindingName = "k3s-apiserver-loadbalancer-metrics-binding"
 var _ = ginkgo.Describe("Manager", ginkgo.Ordered, func() {
 	var controllerPodName string
 
-	// Before running the tests, set up the environment ginkgo.By creating the namespace,
-	// enforce the restricted security policy to the namespace, installing CRDs,
-	// and deploying the controller.
+	// Before running the tests, set up the environment by creating the namespace,
+	// enforcing the restricted security policy, and deploying the controller.
 	ginkgo.BeforeAll(func() {
 		ginkgo.By("creating manager namespace")
 		cmd := exec.Command("kubectl", "create", "ns", namespace)
@@ -59,11 +58,6 @@ var _ = ginkgo.Describe("Manager", ginkgo.Ordered, func() {
 			"pod-security.kubernetes.io/enforce=restricted")
 		_, err = utils.Run(cmd)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Failed to label namespace with restricted policy")
-
-		ginkgo.By("installing CRDs")
-		cmd = exec.Command("make", "install")
-		_, err = utils.Run(cmd)
-		gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Failed to install CRDs")
 
 		ginkgo.By("verifying that the kubernetes service in default namespace is ClusterIP")
 		cmd = exec.Command("kubectl", "get", "service", "kubernetes", "-n", "default", "-o", "jsonpath={.spec.type}")
@@ -77,7 +71,7 @@ var _ = ginkgo.Describe("Manager", ginkgo.Ordered, func() {
 		gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Failed to deploy the controller-manager")
 	})
 
-	// After all tests have been executed, clean up ginkgo.By undeploying the controller, uninstalling CRDs,
+	// After all tests have been executed, clean up by undeploying the controller
 	// and deleting the namespace.
 	ginkgo.AfterAll(func() {
 		ginkgo.By("cleaning up the curl pod for metrics")
@@ -86,10 +80,6 @@ var _ = ginkgo.Describe("Manager", ginkgo.Ordered, func() {
 
 		ginkgo.By("undeploying the controller-manager")
 		cmd = exec.Command("make", "undeploy")
-		_, _ = utils.Run(cmd)
-
-		ginkgo.By("uninstalling CRDs")
-		cmd = exec.Command("make", "uninstall")
 		_, _ = utils.Run(cmd)
 
 		ginkgo.By("removing manager namespace")
@@ -112,7 +102,7 @@ var _ = ginkgo.Describe("Manager", ginkgo.Ordered, func() {
 			}
 
 			ginkgo.By("Fetching Kubernetes events")
-			cmd = exec.Command("kubectl", "get", "events", "-n", namespace, "--sort-ginkgo.By=.lastTimestamp")
+			cmd = exec.Command("kubectl", "get", "events", "-n", namespace, "--sort-by=.lastTimestamp")
 			eventsOutput, err := utils.Run(cmd)
 			if err == nil {
 				_, _ = fmt.Fprintf(ginkgo.GinkgoWriter, "Kubernetes events:\n%s", eventsOutput)
@@ -266,7 +256,7 @@ var _ = ginkgo.Describe("Manager", ginkgo.Ordered, func() {
 							"name": "curl",
 							"image": "curlimages/curl:latest",
 							"command": ["/bin/sh", "-c"],
-							"args": ["curl -v -k -H 'Authorization: Bearer %s' https://%s.%s.svc.cluster.local:8443/metrics"],
+							"args": ["curl -v -k -H 'Authorization: Bearer %s' https://%s:8443/metrics"],
 							"securityContext": {
 								"allowPrivilegeEscalation": false,
 								"capabilities": {
@@ -281,11 +271,11 @@ var _ = ginkgo.Describe("Manager", ginkgo.Ordered, func() {
 						}],
 						"serviceAccount": "%s"
 					}
-				}`, token, metricsServiceName, namespace, serviceAccountName))
+				}`, token, metricsServiceName, serviceAccountName))
 			_, err = utils.Run(cmd)
 			gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Failed to create curl-metrics pod")
 
-			ginkgo.By("waiting for the curl-metrics pod to complete.")
+			ginkgo.By("waiting for the curl-metrics pod to complete")
 			verifyCurlUp := func(g gomega.Gomega) {
 				cmd := exec.Command("kubectl", "get", "pods", "curl-metrics",
 					"-o", "jsonpath={.status.phase}",
@@ -296,7 +286,7 @@ var _ = ginkgo.Describe("Manager", ginkgo.Ordered, func() {
 			}
 			gomega.Eventually(verifyCurlUp, "30s", "1s").Should(gomega.Succeed())
 
-			ginkgo.By("getting the metrics ginkgo.By checking curl-metrics logs")
+			ginkgo.By("checking curl-metrics logs for metrics output")
 			metricsOutput := getMetricsOutput()
 			gomega.Expect(metricsOutput).To(gomega.ContainSubstring(
 				"controller_runtime_reconcile_total",
@@ -313,22 +303,11 @@ var _ = ginkgo.Describe("Manager", ginkgo.Ordered, func() {
 			}
 			gomega.Eventually(verifyServiceType, "30s", "1s").Should(gomega.Succeed())
 		})
-
-		// +kubebuilder:scaffold:e2e-webhooks-checks
-
-		// TODO: Customize the e2e test suite with scenarios specific to your project.
-		// Consider applying sample/CR(s) and check their status and/or verifying
-		// the reconciliation ginkgo.By using the metrics, i.e.:
-		// metricsOutput := getMetricsOutput()
-		// Expect(metricsOutput).To(ContainSubstring(
-		//    fmt.Sprintf(`controller_runtime_reconcile_total{controller="%s",result="success"} 1`,
-		//    strings.ToLower(<Kind>),
-		// ))
 	})
 })
 
 // serviceAccountToken returns a token for the specified service account in the given namespace.
-// It uses the Kubernetes TokenRequest API to generate a token ginkgo.By directly sending a request
+// It uses the Kubernetes TokenRequest API to generate a token by directly sending a request
 // and parsing the resulting token from the API response.
 func serviceAccountToken() (string, error) {
 	const tokenRequestRawString = `{
