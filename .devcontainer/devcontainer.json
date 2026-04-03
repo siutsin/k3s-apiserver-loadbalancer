@@ -21,7 +21,6 @@
   "remoteUser": "dev",
 
   "mounts": [
-    "source=claude-code-bashhistory-${devcontainerId},target=/commandhistory,type=volume",
     "source=claude-code-config-${devcontainerId},target=/home/dev/.claude,type=volume",
     "source=${localEnv:HOME}/.claude/rules,target=/home/dev/.claude/rules,type=bind,readonly",
     "source=${localEnv:HOME}/.claude/skills,target=/home/dev/.claude/skills,type=bind,readonly",
@@ -43,7 +42,7 @@
     }
   },
 
-  "onCreateCommand": "docker network create -d=bridge --subnet=172.19.0.0/24 kind || true",
+  "onCreateCommand": "sudo chown dev:dev /home/dev/.claude && docker network create -d=bridge --subnet=172.19.0.0/24 kind || true",
   "postStartCommand": "sudo /usr/local/bin/init-firewall.sh",
   "waitFor": "postStartCommand"
 }
