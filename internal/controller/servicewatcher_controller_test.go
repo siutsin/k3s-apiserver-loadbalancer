@@ -1,4 +1,4 @@
-package controller
+package controller_test
 
 import (
 	"context"
@@ -15,6 +15,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/siutsin/k3s-apiserver-loadbalancer/internal/controller"
 	"github.com/siutsin/k3s-apiserver-loadbalancer/internal/controller/mocks"
 	"go.uber.org/mock/gomock"
 )
@@ -56,7 +57,7 @@ func TestServiceWatcherReconciler_LoadBalancerUpdate(t *testing.T) {
 			return nil
 		})
 
-	reconciler := &ServiceWatcherReconciler{
+	reconciler := &controller.ServiceWatcherReconciler{
 		Client: mockClient,
 		Scheme: newTestScheme(),
 	}
@@ -81,7 +82,7 @@ func TestServiceWatcherReconciler_GetError(t *testing.T) {
 		Get(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(errNotFound)
 
-	reconciler := &ServiceWatcherReconciler{
+	reconciler := &controller.ServiceWatcherReconciler{
 		Client: mockClient,
 		Scheme: newTestScheme(),
 	}
@@ -123,7 +124,7 @@ func TestServiceWatcherReconciler_UpdateError(t *testing.T) {
 		Update(gomock.Any(), gomock.Any()).
 		Return(errUpdate)
 
-	reconciler := &ServiceWatcherReconciler{
+	reconciler := &controller.ServiceWatcherReconciler{
 		Client: mockClient,
 		Scheme: newTestScheme(),
 	}
@@ -161,7 +162,7 @@ func TestServiceWatcherReconciler_SkipsNonTarget(t *testing.T) {
 		})
 	// No Update call expected; gomock will fail if Update is called.
 
-	reconciler := &ServiceWatcherReconciler{
+	reconciler := &controller.ServiceWatcherReconciler{
 		Client: mockClient,
 		Scheme: newTestScheme(),
 	}
@@ -199,7 +200,7 @@ func TestServiceWatcherReconciler_SkipsAlreadyLoadBalancer(t *testing.T) {
 		})
 	// No Update call expected.
 
-	reconciler := &ServiceWatcherReconciler{
+	reconciler := &controller.ServiceWatcherReconciler{
 		Client: mockClient,
 		Scheme: newTestScheme(),
 	}
