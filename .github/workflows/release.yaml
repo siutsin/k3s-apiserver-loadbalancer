@@ -78,4 +78,5 @@ jobs:
       - name: Create GitHub Release and upload installer
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release create "${{ steps.bump_version.outputs.new_tag }}" dist/install.yaml --generate-notes
+          NEW_TAG: ${{ steps.bump_version.outputs.new_tag }}
+        run: gh release create "$NEW_TAG" dist/install.yaml --generate-notes
