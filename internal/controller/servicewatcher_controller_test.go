@@ -1,19 +1,3 @@
-/*
-Copyright 2025.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 package controller
 
 import (
@@ -21,6 +5,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -66,9 +52,7 @@ func TestServiceWatcherReconciler_LoadBalancerUpdate(t *testing.T) {
 		Update(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, obj client.Object, _ ...client.UpdateOption) error {
 			updated := obj.(*corev1.Service)
-			if updated.Spec.Type != corev1.ServiceTypeLoadBalancer {
-				t.Errorf("expected Update with LoadBalancer type, got %q", updated.Spec.Type)
-			}
+			assert.Equal(t, corev1.ServiceTypeLoadBalancer, updated.Spec.Type)
 			return nil
 		})
 
@@ -84,9 +68,7 @@ func TestServiceWatcherReconciler_LoadBalancerUpdate(t *testing.T) {
 		},
 	})
 
-	if err != nil {
-		t.Fatalf("reconcile failed with unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 }
 
 func TestServiceWatcherReconciler_GetError(t *testing.T) {
@@ -111,9 +93,7 @@ func TestServiceWatcherReconciler_GetError(t *testing.T) {
 		},
 	})
 
-	if err == nil {
-		t.Fatal("expected error from reconcile, got nil")
-	}
+	require.Error(t, err)
 }
 
 func TestServiceWatcherReconciler_UpdateError(t *testing.T) {
@@ -155,9 +135,7 @@ func TestServiceWatcherReconciler_UpdateError(t *testing.T) {
 		},
 	})
 
-	if err == nil {
-		t.Fatal("expected error from reconcile, got nil")
-	}
+	require.Error(t, err)
 }
 
 func TestServiceWatcherReconciler_SkipsNonTarget(t *testing.T) {
@@ -195,9 +173,7 @@ func TestServiceWatcherReconciler_SkipsNonTarget(t *testing.T) {
 		},
 	})
 
-	if err != nil {
-		t.Fatalf("reconcile failed with unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 }
 
 func TestServiceWatcherReconciler_SkipsAlreadyLoadBalancer(t *testing.T) {
@@ -235,7 +211,5 @@ func TestServiceWatcherReconciler_SkipsAlreadyLoadBalancer(t *testing.T) {
 		},
 	})
 
-	if err != nil {
-		t.Fatalf("reconcile failed with unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 }
