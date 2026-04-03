@@ -29,14 +29,6 @@ help:
 
 ##@ Development
 
-.PHONY: manifests
-manifests: controller-gen ## Generate RBAC ClusterRole manifests.
-	$(CONTROLLER_GEN) rbac:roleName=manager-role paths="./..."
-
-.PHONY: generate
-generate: controller-gen ## Generate DeepCopy method implementations.
-	$(CONTROLLER_GEN) object paths="./..."
-
 .PHONY: generate-mocks
 generate-mocks: mockgen ## Generate mock implementations for testing.
 	$(MOCKGEN) -destination=internal/controller/mocks/mock_client.go -package=mocks sigs.k8s.io/controller-runtime/pkg/client Client
@@ -50,11 +42,11 @@ vet: ## Run go vet against code.
 	go vet ./...
 
 .PHONY: test
-test: manifests generate generate-mocks fmt vet ## Run tests.
+test: generate-mocks fmt vet ## Run tests.
 	go test ./internal/... -coverprofile cover.out
 
 .PHONY: test-e2e
-test-e2e: manifests generate generate-mocks fmt vet docker-build ## Run the e2e tests. Use LOCAL=true for fresh kind cluster.
+test-e2e: generate-mocks fmt vet docker-build ## Run the e2e tests. Use LOCAL=true for fresh kind cluster.
 	@command -v $(KIND) >/dev/null 2>&1 || { \
 		echo "Kind is not installed. Please install Kind manually."; \
 		exit 1; \
@@ -89,11 +81,11 @@ lint-config: golangci-lint ## Verify golangci-lint configuration
 ##@ Build
 
 .PHONY: build
-build: manifests generate fmt vet ## Build manager binary.
+build: fmt vet ## Build manager binary.
 	go build -o bin/manager cmd/main.go
 
 .PHONY: run
-run: manifests generate fmt vet ## Run a controller from your host.
+run: fmt vet ## Run a controller from your host.
 	go run ./cmd/main.go
 
 .PHONY: docker-build
@@ -107,7 +99,6 @@ docker-push: ## Push docker image with the manager.
 PLATFORMS ?= linux/arm64,linux/amd64,linux/s390x,linux/ppc64le
 .PHONY: docker-buildx
 docker-buildx: ## Build and push docker image for the manager for cross-platform support
-	# copy existing Dockerfile and insert --platform=${BUILDPLATFORM} into Dockerfile.cross, and preserve the original Dockerfile
 	sed -e '1 s/\(^FROM\)/FROM --platform=\$$\{BUILDPLATFORM\}/; t' -e ' 1,// s//FROM --platform=\$$\{BUILDPLATFORM\}/' Dockerfile > Dockerfile.cross
 	- $(CONTAINER_TOOL) buildx create --name k3s-apiserver-loadbalancer-builder
 	$(CONTAINER_TOOL) buildx use k3s-apiserver-loadbalancer-builder
@@ -121,17 +112,16 @@ IGNORE_NOT_FOUND ?= false
 clean:
 	@echo "Cleaning up..."
 	rm -rf bin/ dist/ cover.out Dockerfile.cross
-	find . -name "*.tmp" -type f -delete
 
 .PHONY: build-installer
-build-installer: manifests generate ## Generate a consolidated YAML with the deployment.
+build-installer: ## Generate a consolidated YAML with the deployment.
 	mkdir -p dist
 	sed 's|image: controller:latest|image: ${IMG}|' deploy/install.yaml > dist/install.yaml
 
 ##@ Deployment
 
 .PHONY: deploy
-deploy: manifests ## Deploy controller to the K8s cluster specified in ~/.kube/config.
+deploy: ## Deploy controller to the K8s cluster specified in ~/.kube/config.
 	sed 's|image: controller:latest|image: ${IMG}|' deploy/install.yaml | $(KUBECTL) apply -f -
 
 .PHONY: undeploy
@@ -146,19 +136,11 @@ $(LOCALBIN):
 
 KUBECTL ?= kubectl
 KIND ?= kind
-CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
 MOCKGEN ?= $(LOCALBIN)/mockgen
 
 GOLANGCI_LINT_VERSION ?= $(shell go list -m -f "{{ .Version }}" github.com/golangci/golangci-lint/v2)
 MOCKGEN_VERSION ?= $(shell go list -m -f "{{ .Version }}" go.uber.org/mock)
-CONTROLLER_TOOLS_VERSION ?= $(shell go list -m -f "{{ .Version }}" sigs.k8s.io/controller-tools)
-
-.PHONY: controller-gen
-controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.
-$(CONTROLLER_GEN): $(LOCALBIN)
-	$(call go-install-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen,$(CONTROLLER_TOOLS_VERSION))
-
 
 define go-install-tool
 @[ -f "$(1)-$(3)" ] || { \
