@@ -164,6 +164,10 @@ mockgen: $(MOCKGEN) ## Download mockgen locally if necessary.
 $(MOCKGEN): $(LOCALBIN)
 	$(call go-install-tool,$(MOCKGEN),go.uber.org/mock/mockgen,$(MOCKGEN_VERSION))
 
+.PHONY: lint-dockerfile
+lint-dockerfile: ## Run hadolint on Dockerfile.
+	hadolint Dockerfile
+
 .PHONY: lint-markdown
 lint-markdown:
 	@echo "Linting markdown files..."

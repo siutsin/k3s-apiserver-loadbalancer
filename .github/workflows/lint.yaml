@@ -11,9 +11,10 @@ on:
       - '**.go'
       - 'go.mod'
       - 'go.sum'
+      - 'Dockerfile'
 
 jobs:
-  lint:
+  go:
     runs-on: ubuntu-latest
 
     permissions:
@@ -34,3 +35,20 @@ jobs:
         uses: golangci/golangci-lint-action@1e7e51e771db61008b38414a730f564565cf7c20 # v9
         with:
           version: v2.11.4
+
+  dockerfile:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Clone the code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - name: Run hadolint
+        uses: hadolint/hadolint-action@54c9adbab1582c2ef04b2016b760714a4bfde3cf # v3.1.0
+        with:
+          dockerfile: Dockerfile
