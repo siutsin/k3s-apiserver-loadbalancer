@@ -13,11 +13,6 @@ import (
 func run(cmd *exec.Cmd) (string, error) {
 	dir, _ := getProjectDir()
 	cmd.Dir = dir
-
-	if err := os.Chdir(cmd.Dir); err != nil {
-		fmt.Fprintf(os.Stderr, "chdir dir: %s\n", err)
-	}
-
 	cmd.Env = append(os.Environ(), "GO111MODULE=on")
 	command := strings.Join(cmd.Args, " ")
 	fmt.Fprintf(os.Stderr, "running: %s\n", command)
