@@ -7,5 +7,4 @@ package main
 import (
 	_ "github.com/golangci/golangci-lint/v2/cmd/golangci-lint"
 	_ "go.uber.org/mock/mockgen"
-	_ "sigs.k8s.io/controller-tools/cmd/controller-gen"
 )

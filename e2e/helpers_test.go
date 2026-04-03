@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -109,6 +110,6 @@ func getProjectDir() (string, error) {
 	if err != nil {
 		return wd, err
 	}
-	wd = strings.ReplaceAll(wd, "/e2e", "")
+	wd = filepath.Dir(wd)
 	return wd, nil
 }

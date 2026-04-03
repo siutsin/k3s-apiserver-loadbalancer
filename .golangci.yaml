@@ -45,7 +45,7 @@ linters:
       path: internal/*
     - linters:
       - gosec
-      path: test/*
+      path: e2e/*
     paths:
     - third_party$
     - builtin$
