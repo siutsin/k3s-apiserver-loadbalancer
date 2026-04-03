@@ -124,21 +124,19 @@ clean:
 	find . -name "*.tmp" -type f -delete
 
 .PHONY: build-installer
-build-installer: manifests generate kustomize ## Generate a consolidated YAML with CRDs and deployment.
+build-installer: manifests generate ## Generate a consolidated YAML with the deployment.
 	mkdir -p dist
-	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KUSTOMIZE) build config/default > dist/install.yaml
+	sed 's|image: controller:latest|image: ${IMG}|' deploy/install.yaml > dist/install.yaml
 
 ##@ Deployment
 
 .PHONY: deploy
-deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KUSTOMIZE) build config/default | $(KUBECTL) apply -f -
+deploy: manifests ## Deploy controller to the K8s cluster specified in ~/.kube/config.
+	sed 's|image: controller:latest|image: ${IMG}|' deploy/install.yaml | $(KUBECTL) apply -f -
 
 .PHONY: undeploy
-undeploy: kustomize ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
-	$(KUSTOMIZE) build config/default | $(KUBECTL) delete --ignore-not-found=$(IGNORE_NOT_FOUND) -f -
+undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
+	$(KUBECTL) delete --ignore-not-found=$(IGNORE_NOT_FOUND) -f deploy/install.yaml
 
 ##@ Dependencies
 
@@ -148,20 +146,13 @@ $(LOCALBIN):
 
 KUBECTL ?= kubectl
 KIND ?= kind
-KUSTOMIZE ?= $(LOCALBIN)/kustomize
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
 MOCKGEN ?= $(LOCALBIN)/mockgen
 
 GOLANGCI_LINT_VERSION ?= $(shell go list -m -f "{{ .Version }}" github.com/golangci/golangci-lint/v2)
-KUSTOMIZE_VERSION ?= $(shell go list -m -f "{{ .Version }}" sigs.k8s.io/kustomize/kustomize/v5)
 MOCKGEN_VERSION ?= $(shell go list -m -f "{{ .Version }}" go.uber.org/mock)
 CONTROLLER_TOOLS_VERSION ?= $(shell go list -m -f "{{ .Version }}" sigs.k8s.io/controller-tools)
-
-.PHONY: kustomize
-kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary.
-$(KUSTOMIZE): $(LOCALBIN)
-	$(call go-install-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v5,$(KUSTOMIZE_VERSION))
 
 .PHONY: controller-gen
 controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.
