@@ -6,6 +6,12 @@ on:
       - closed
     branches:
       - master
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - 'Dockerfile'
+      - 'Makefile'
 
 env:
   REGISTRY: ghcr.io
@@ -26,6 +32,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
+          fetch-depth: 0
 
       - name: Bump version and push tag
         id: bump_version
@@ -60,3 +67,16 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest,${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.bump_version.outputs.new_tag }}
+
+      - name: Generate installer manifest for new version
+        env:
+          REGISTRY: ${{ env.REGISTRY }}
+          IMAGE_NAME: ${{ env.IMAGE_NAME }}
+          NEW_TAG: ${{ steps.bump_version.outputs.new_tag }}
+        run: make build-installer IMG="$REGISTRY/$IMAGE_NAME:$NEW_TAG"
+
+      - name: Create GitHub Release and upload installer
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEW_TAG: ${{ steps.bump_version.outputs.new_tag }}
+        run: gh release create "$NEW_TAG" dist/install.yaml --generate-notes

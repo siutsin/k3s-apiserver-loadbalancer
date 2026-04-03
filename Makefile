@@ -116,17 +116,17 @@ clean:
 .PHONY: build-installer
 build-installer: ## Generate a consolidated YAML with the deployment.
 	mkdir -p dist
-	sed 's|image: controller:latest|image: ${IMG}|' deploy/install.yaml > dist/install.yaml
+	sed 's|image: controller:latest|image: ${IMG}|' deploy/install-template.yaml > dist/install.yaml
 
 ##@ Deployment
 
 .PHONY: deploy
 deploy: ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	sed 's|image: controller:latest|image: ${IMG}|' deploy/install.yaml | $(KUBECTL) apply -f -
+	sed 's|image: controller:latest|image: ${IMG}|' deploy/install-template.yaml | $(KUBECTL) apply -f -
 
 .PHONY: undeploy
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
-	$(KUBECTL) delete --ignore-not-found=$(IGNORE_NOT_FOUND) -f deploy/install.yaml
+	$(KUBECTL) delete --ignore-not-found=$(IGNORE_NOT_FOUND) -f deploy/install-template.yaml
 
 ##@ Dependencies
 
