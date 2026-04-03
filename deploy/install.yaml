@@ -2,70 +2,14 @@ apiVersion: v1
 kind: Namespace
 metadata:
   labels:
-    app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: k3s-apiserver-loadbalancer
     control-plane: controller-manager
   name: k3s-apiserver-loadbalancer-system
----
-apiVersion: apiextensions.k8s.io/v1
-kind: CustomResourceDefinition
-metadata:
-  annotations:
-    controller-gen.kubebuilder.io/version: v0.17.2
-  name: servicewatchers.core.siutsin.com
-spec:
-  group: core.siutsin.com
-  names:
-    kind: ServiceWatcher
-    listKind: ServiceWatcherList
-    plural: servicewatchers
-    singular: servicewatcher
-  scope: Namespaced
-  versions:
-  - name: v1alpha1
-    schema:
-      openAPIV3Schema:
-        description: ServiceWatcher is the Schema for the servicewatchers API.
-        properties:
-          apiVersion:
-            description: |-
-              APIVersion defines the versioned schema of this representation of an object.
-              Servers should convert recognized schemas to the latest internal value, and
-              may reject unrecognized values.
-              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-            type: string
-          kind:
-            description: |-
-              Kind is a string value representing the REST resource this object represents.
-              Servers may infer this from the endpoint the client submits requests to.
-              Cannot be updated.
-              In CamelCase.
-              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-            type: string
-          metadata:
-            type: object
-          spec:
-            description: ServiceWatcherSpec defines the desired state of ServiceWatcher.
-            properties:
-              foo:
-                description: Foo is an example field of ServiceWatcher. Edit servicewatcher_types.go
-                  to remove/update
-                type: string
-            type: object
-          status:
-            description: ServiceWatcherStatus defines the observed state of ServiceWatcher.
-            type: object
-        type: object
-    served: true
-    storage: true
-    subresources:
-      status: {}
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   labels:
-    app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: k3s-apiserver-loadbalancer
   name: k3s-apiserver-loadbalancer-controller-manager
   namespace: k3s-apiserver-loadbalancer-system
@@ -74,7 +18,6 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   labels:
-    app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: k3s-apiserver-loadbalancer
   name: k3s-apiserver-loadbalancer-leader-election-role
   namespace: k3s-apiserver-loadbalancer-system
@@ -156,81 +99,9 @@ rules:
   - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  labels:
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: k3s-apiserver-loadbalancer
-  name: k3s-apiserver-loadbalancer-servicewatcher-admin-role
-rules:
-- apiGroups:
-  - core.siutsin.com
-  resources:
-  - servicewatchers
-  verbs:
-  - '*'
-- apiGroups:
-  - core.siutsin.com
-  resources:
-  - servicewatchers/status
-  verbs:
-  - get
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  labels:
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: k3s-apiserver-loadbalancer
-  name: k3s-apiserver-loadbalancer-servicewatcher-editor-role
-rules:
-- apiGroups:
-  - core.siutsin.com
-  resources:
-  - servicewatchers
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - core.siutsin.com
-  resources:
-  - servicewatchers/status
-  verbs:
-  - get
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  labels:
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: k3s-apiserver-loadbalancer
-  name: k3s-apiserver-loadbalancer-servicewatcher-viewer-role
-rules:
-- apiGroups:
-  - core.siutsin.com
-  resources:
-  - servicewatchers
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - core.siutsin.com
-  resources:
-  - servicewatchers/status
-  verbs:
-  - get
----
-apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   labels:
-    app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: k3s-apiserver-loadbalancer
   name: k3s-apiserver-loadbalancer-leader-election-rolebinding
   namespace: k3s-apiserver-loadbalancer-system
@@ -247,7 +118,6 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   labels:
-    app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: k3s-apiserver-loadbalancer
   name: k3s-apiserver-loadbalancer-manager-rolebinding
 roleRef:
@@ -276,7 +146,6 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: k3s-apiserver-loadbalancer
     control-plane: controller-manager
   name: k3s-apiserver-loadbalancer-controller-manager-metrics-service
@@ -295,7 +164,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: k3s-apiserver-loadbalancer
     control-plane: controller-manager
   name: k3s-apiserver-loadbalancer-controller-manager
@@ -321,7 +189,7 @@ spec:
         - --health-probe-bind-address=:8081
         command:
         - /manager
-        image: ghcr.io/siutsin/k3s-apiserver-loadbalancer:v1.1.0
+        image: controller:latest
         livenessProbe:
           httpGet:
             path: /healthz
@@ -329,7 +197,6 @@ spec:
           initialDelaySeconds: 15
           periodSeconds: 20
         name: manager
-        ports: []
         readinessProbe:
           httpGet:
             path: /readyz
@@ -348,11 +215,9 @@ spec:
           capabilities:
             drop:
             - ALL
-        volumeMounts: []
       securityContext:
         runAsNonRoot: true
         seccompProfile:
           type: RuntimeDefault
       serviceAccountName: k3s-apiserver-loadbalancer-controller-manager
       terminationGracePeriodSeconds: 10
-      volumes: []

@@ -7,20 +7,28 @@ linters:
   - copyloopvar
   - dupl
   - errcheck
-  - ginkgolinter
+  - errorlint
+  - exptostd
   - goconst
+  - gocritic
   - gocyclo
+  - gosec
   - govet
   - ineffassign
   - lll
   - misspell
+  - modernize
   - nakedret
+  - nilerr
+  - perfsprint
   - prealloc
   - revive
   - staticcheck
+  - testifylint
   - unconvert
   - unparam
   - unused
+  - usetesting
   settings:
     revive:
       rules:
@@ -29,12 +37,12 @@ linters:
     generated: lax
     rules:
     - linters:
-      - lll
-      path: api/*
-    - linters:
       - dupl
       - lll
       path: internal/*
+    - linters:
+      - gosec
+      path: e2e/*
     paths:
     - third_party$
     - builtin$

@@ -39,12 +39,6 @@ make docker-build docker-push IMG=ghcr.io/siutsin/k3s-apiserver-loadbalancer:v1.
 And it is required to have access to pull the image from the working environment.
 Make sure you have the proper permission to the registry if the above commands don’t work.
 
-**Install the CRDs into the cluster:**
-
-```sh
-make install
-```
-
 **Deploy the Manager to the cluster with the image specified by `IMG`:**
 
 ```sh
@@ -53,15 +47,6 @@ make deploy IMG=ghcr.io/siutsin/k3s-apiserver-loadbalancer:v1.0.0
 
 > **NOTE**: If you encounter RBAC errors, you may need to grant yourself cluster-admin
 > privileges or be logged in as admin.
-
-**Create instances of your solution**
-You can apply the samples (examples) from the config/sample:
-
-```sh
-kubectl apply -k config/samples/
-```
-
-> **NOTE**: Ensure that the samples have default values to test it out.
 
 ### To Uninstall
 

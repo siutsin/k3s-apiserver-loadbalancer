@@ -1,5 +1,5 @@
-# Build the manager binary
-FROM docker.io/golang:1.26@sha256:595c7847cff97c9a9e76f015083c481d26078f961c9c8dca3923132f51fe12f1 AS builder
+# golang:1.26
+FROM docker.io/golang@sha256:595c7847cff97c9a9e76f015083c481d26078f961c9c8dca3923132f51fe12f1 AS builder
 ARG TARGETOS
 ARG TARGETARCH
 
@@ -12,8 +12,7 @@ COPY go.sum go.sum
 RUN go mod download
 
 # Copy the go source
-COPY cmd/main.go cmd/main.go
-COPY api/ api/
+COPY ["cmd/main.go", "cmd/main.go"]
 COPY internal/ internal/
 
 # Build
@@ -23,9 +22,8 @@ COPY internal/ internal/
 # by leaving it empty we can ensure that the container and binary shipped on it will have the same platform.
 RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o manager cmd/main.go
 
-# Use distroless as minimal base image to package the manager binary
-# Refer to https://github.com/GoogleContainerTools/distroless for more details
-FROM gcr.io/distroless/static:nonroot@sha256:e3f945647ffb95b5839c07038d64f9811adf17308b9121d8a2b87b6a22a80a39
+# distroless/static:nonroot
+FROM gcr.io/distroless/static@sha256:e3f945647ffb95b5839c07038d64f9811adf17308b9121d8a2b87b6a22a80a39
 WORKDIR /
 COPY --from=builder /workspace/manager .
 USER 65532:65532

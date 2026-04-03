@@ -1,58 +1,216 @@
-/*
-Copyright 2025.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
-package controller
+package controller_test
 
 import (
 	"context"
+	"errors"
+	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-
-	"github.com/onsi/ginkgo/v2"
-	"github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/siutsin/k3s-apiserver-loadbalancer/internal/controller"
+	"github.com/siutsin/k3s-apiserver-loadbalancer/internal/controller/mocks"
+	"go.uber.org/mock/gomock"
 )
 
-var _ = ginkgo.Describe("ServiceWatcher Controller", func() {
-	ginkgo.Context("When reconciling a Kubernetes Service resource", func() {
-		const (
-			serviceName      = "kubernetes"
-			serviceNamespace = "default"
-		)
-		ctx := context.Background()
-		typeNamespacedName := types.NamespacedName{
-			Name:      serviceName,
-			Namespace: serviceNamespace,
-		}
-		ginkgo.It("should update the Service type to LoadBalancer", func() {
-			ginkgo.By("Reconciling the Service resource")
-			controllerReconciler := &ServiceWatcherReconciler{
-				Client: k8sClient,
-				Scheme: k8sClient.Scheme(),
-			}
-			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
-				NamespacedName: typeNamespacedName,
-			})
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-			service := &corev1.Service{}
-			gomega.Expect(k8sClient.Get(ctx, typeNamespacedName, service)).To(gomega.Succeed())
+// newTestScheme creates a runtime.Scheme with core and client-go types registered.
+func newTestScheme() *runtime.Scheme {
+	s := runtime.NewScheme()
+	_ = corev1.AddToScheme(s)
+	_ = clientgoscheme.AddToScheme(s)
+	return s
+}
 
-			ginkgo.By("verifying that the Service type is LoadBalancer")
-			gomega.Expect(service.Spec.Type).To(gomega.Equal(corev1.ServiceTypeLoadBalancer))
+func TestServiceWatcherReconciler_LoadBalancerUpdate(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+
+	svc := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            "kubernetes",
+			Namespace:       "default",
+			ResourceVersion: "1",
+		},
+		Spec: corev1.ServiceSpec{
+			Type: corev1.ServiceTypeClusterIP,
+		},
+	}
+
+	mockClient := mocks.NewMockClient(mockCtrl)
+	mockClient.EXPECT().
+		Get(gomock.Any(), types.NamespacedName{Name: "kubernetes", Namespace: "default"}, gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ client.ObjectKey, obj client.Object, _ ...client.GetOption) error {
+			*obj.(*corev1.Service) = *svc
+			return nil
 		})
+	mockClient.EXPECT().
+		Update(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, obj client.Object, _ ...client.UpdateOption) error {
+			updated := obj.(*corev1.Service)
+			assert.Equal(t, corev1.ServiceTypeLoadBalancer, updated.Spec.Type)
+			return nil
+		})
+
+	reconciler := &controller.ServiceWatcherReconciler{
+		Client: mockClient,
+		Scheme: newTestScheme(),
+	}
+
+	_, err := reconciler.Reconcile(context.Background(), ctrl.Request{
+		NamespacedName: types.NamespacedName{
+			Name:      "kubernetes",
+			Namespace: "default",
+		},
 	})
-})
+
+	require.NoError(t, err)
+}
+
+func TestServiceWatcherReconciler_GetError(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+
+	errNotFound := errors.New("not found")
+
+	mockClient := mocks.NewMockClient(mockCtrl)
+	mockClient.EXPECT().
+		Get(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(errNotFound)
+
+	reconciler := &controller.ServiceWatcherReconciler{
+		Client: mockClient,
+		Scheme: newTestScheme(),
+	}
+
+	_, err := reconciler.Reconcile(context.Background(), ctrl.Request{
+		NamespacedName: types.NamespacedName{
+			Name:      "kubernetes",
+			Namespace: "default",
+		},
+	})
+
+	require.Error(t, err)
+}
+
+func TestServiceWatcherReconciler_UpdateError(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+
+	svc := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            "kubernetes",
+			Namespace:       "default",
+			ResourceVersion: "1",
+		},
+		Spec: corev1.ServiceSpec{
+			Type: corev1.ServiceTypeClusterIP,
+		},
+	}
+
+	errUpdate := errors.New("update failed")
+
+	mockClient := mocks.NewMockClient(mockCtrl)
+	mockClient.EXPECT().
+		Get(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ client.ObjectKey, obj client.Object, _ ...client.GetOption) error {
+			*obj.(*corev1.Service) = *svc
+			return nil
+		})
+	mockClient.EXPECT().
+		Update(gomock.Any(), gomock.Any()).
+		Return(errUpdate)
+
+	reconciler := &controller.ServiceWatcherReconciler{
+		Client: mockClient,
+		Scheme: newTestScheme(),
+	}
+
+	_, err := reconciler.Reconcile(context.Background(), ctrl.Request{
+		NamespacedName: types.NamespacedName{
+			Name:      "kubernetes",
+			Namespace: "default",
+		},
+	})
+
+	require.Error(t, err)
+}
+
+func TestServiceWatcherReconciler_SkipsNonTarget(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+
+	svc := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            "other-service",
+			Namespace:       "kube-system",
+			ResourceVersion: "1",
+		},
+		Spec: corev1.ServiceSpec{
+			Type: corev1.ServiceTypeClusterIP,
+		},
+	}
+
+	mockClient := mocks.NewMockClient(mockCtrl)
+	mockClient.EXPECT().
+		Get(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ client.ObjectKey, obj client.Object, _ ...client.GetOption) error {
+			*obj.(*corev1.Service) = *svc
+			return nil
+		})
+	// No Update call expected; gomock will fail if Update is called.
+
+	reconciler := &controller.ServiceWatcherReconciler{
+		Client: mockClient,
+		Scheme: newTestScheme(),
+	}
+
+	_, err := reconciler.Reconcile(context.Background(), ctrl.Request{
+		NamespacedName: types.NamespacedName{
+			Name:      "other-service",
+			Namespace: "kube-system",
+		},
+	})
+
+	require.NoError(t, err)
+}
+
+func TestServiceWatcherReconciler_SkipsAlreadyLoadBalancer(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+
+	svc := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            "kubernetes",
+			Namespace:       "default",
+			ResourceVersion: "1",
+		},
+		Spec: corev1.ServiceSpec{
+			Type: corev1.ServiceTypeLoadBalancer,
+		},
+	}
+
+	mockClient := mocks.NewMockClient(mockCtrl)
+	mockClient.EXPECT().
+		Get(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ client.ObjectKey, obj client.Object, _ ...client.GetOption) error {
+			*obj.(*corev1.Service) = *svc
+			return nil
+		})
+	// No Update call expected.
+
+	reconciler := &controller.ServiceWatcherReconciler{
+		Client: mockClient,
+		Scheme: newTestScheme(),
+	}
+
+	_, err := reconciler.Reconcile(context.Background(), ctrl.Request{
+		NamespacedName: types.NamespacedName{
+			Name:      "kubernetes",
+			Namespace: "default",
+		},
+	})
+
+	require.NoError(t, err)
+}
