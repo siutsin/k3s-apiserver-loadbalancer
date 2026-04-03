@@ -16,7 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/siutsin/k3s-apiserver-loadbalancer/internal/controller"
-	"github.com/siutsin/k3s-apiserver-loadbalancer/internal/controller/mocks"
+	"github.com/siutsin/k3s-apiserver-loadbalancer/mocks"
 	"go.uber.org/mock/gomock"
 )
 

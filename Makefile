@@ -31,7 +31,7 @@ help:
 
 .PHONY: generate-mocks
 generate-mocks: mockgen ## Generate mock implementations for testing.
-	$(MOCKGEN) -destination=internal/controller/mocks/mock_client.go -package=mocks sigs.k8s.io/controller-runtime/pkg/client Client
+	$(MOCKGEN) -destination=mocks/mock_client.go -package=mocks sigs.k8s.io/controller-runtime/pkg/client Client
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
@@ -42,8 +42,8 @@ vet: ## Run go vet against code.
 	go vet ./...
 
 .PHONY: test
-test: generate-mocks fmt vet ## Run tests.
-	go test ./internal/... -coverprofile cover.out
+test: generate-mocks fmt vet lint-go lint-dockerfile lint-markdown ## Run tests.
+	go test -race -count=1 -coverprofile cover.out ./internal/...
 
 .PHONY: test-e2e
 test-e2e: generate-mocks fmt vet docker-build ## Run the e2e tests. Use LOCAL=true for fresh kind cluster.
@@ -60,22 +60,18 @@ test-e2e: generate-mocks fmt vet docker-build ## Run the e2e tests. Use LOCAL=tr
 		kind delete cluster --name kind; \
 	fi
 
-.PHONY: test-e2e-podman
-test-e2e-podman: ## Run e2e tests using podman with a fresh kind cluster.
-	$(MAKE) test-e2e CONTAINER_TOOL=podman LOCAL=true
-
 ##@ Linting
 
-.PHONY: lint
-lint: golangci-lint ## Run golangci-lint linter
+.PHONY: lint-go
+lint-go: golangci-lint ## Run golangci-lint linter
 	$(GOLANGCI_LINT) run
 
-.PHONY: lint-fix
-lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
+.PHONY: lint-go-fix
+lint-go-fix: golangci-lint ## Run golangci-lint linter and perform fixes
 	$(GOLANGCI_LINT) run --fix
 
-.PHONY: lint-config
-lint-config: golangci-lint ## Verify golangci-lint configuration
+.PHONY: lint-go-config
+lint-go-config: golangci-lint ## Verify golangci-lint configuration
 	$(GOLANGCI_LINT) config verify
 
 ##@ Build
@@ -165,8 +161,8 @@ $(MOCKGEN): $(LOCALBIN)
 	$(call go-install-tool,$(MOCKGEN),go.uber.org/mock/mockgen,$(MOCKGEN_VERSION))
 
 .PHONY: lint-dockerfile
-lint-dockerfile: ## Run hadolint on Dockerfile.
-	hadolint Dockerfile
+lint-dockerfile: ## Run hadolint on Dockerfiles.
+	hadolint Dockerfile .devcontainer/Dockerfile
 
 .PHONY: lint-markdown
 lint-markdown:

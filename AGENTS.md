@@ -41,7 +41,7 @@ This document provides directives for LLM agents working on this project.
 ### Testing Protocol
 
 - **Linting**: Ensure code passes `go fmt`, `go vet`, and `golangci-lint`.
-- **Verification**: Run `make lint-markdown-fix && make lint && make test && make test-e2e LOCAL=true`.
+- **Verification**: Run `make lint-markdown-fix && make lint-go && make test && make test-e2e LOCAL=true`.
 - **Requirement**: Verify all checks pass before completion.
 
 ### Unit Test Standards
