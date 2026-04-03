@@ -61,9 +61,9 @@ test-e2e: manifests generate generate-mocks fmt vet docker-build ## Run the e2e 
 	}
 	@if [ "$(LOCAL)" = "true" ]; then \
 		kind delete cluster --name kind; \
-		kind create cluster --name kind --config test/e2e/kind-config.yaml; \
+		kind create cluster --name kind --config e2e/kind-config.yaml; \
 	fi
-	CONTAINER_TOOL=$(CONTAINER_TOOL) go test ./test/e2e/ -v -ginkgo.v
+	CONTAINER_TOOL=$(CONTAINER_TOOL) go test ./e2e/ -v
 	@if [ "$(LOCAL)" = "true" ]; then \
 		kind delete cluster --name kind; \
 	fi
