@@ -1,25 +1,49 @@
 {
-  "name": "Kubebuilder DevContainer",
-  "image": "docker.io/golang:1.26",
+  "name": "k3s API Server Load Balancer",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "args": {
+      "TZ": "${localEnv:TZ:UTC}"
+    }
+  },
   "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
-    "ghcr.io/devcontainers/features/git:1": {}
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "moby": false
+    }
   },
 
-  "runArgs": ["--network=host"],
+  "runArgs": [
+    "--cap-add=NET_ADMIN",
+    "--cap-add=NET_RAW",
+    "--network=host"
+  ],
+
+  "remoteUser": "dev",
+
+  "mounts": [
+    "source=claude-code-bashhistory-${devcontainerId},target=/commandhistory,type=volume",
+    "source=claude-code-config-${devcontainerId},target=/home/dev/.claude,type=volume",
+    "source=${localEnv:HOME}/.claude/rules,target=/home/dev/.claude/rules,type=bind,readonly",
+    "source=${localEnv:HOME}/.claude/skills,target=/home/dev/.claude/skills,type=bind,readonly",
+    "source=${localEnv:HOME}/.claude/settings.json,target=/home/dev/.claude/settings.json,type=bind,readonly"
+  ],
+
+  "containerEnv": {
+    "NODE_OPTIONS": "--max-old-space-size=4096",
+    "CLAUDE_CONFIG_DIR": "/home/dev/.claude"
+  },
 
   "customizations": {
-    "vscode": {
-      "settings": {
-        "terminal.integrated.shell.linux": "/bin/bash"
-      },
-      "extensions": [
-        "ms-kubernetes-tools.vscode-kubernetes-tools",
-        "ms-azuretools.vscode-docker"
+    "jetbrains": {
+      "backend": "IntelliJ",
+      "plugins": [
+        "com.intellij.kubernetes",
+        "Docker"
       ]
     }
   },
 
-  "onCreateCommand": "bash .devcontainer/post-install.sh"
+  "onCreateCommand": "docker network create -d=bridge --subnet=172.19.0.0/24 kind || true",
+  "postStartCommand": "sudo /usr/local/bin/init-firewall.sh",
+  "waitFor": "postStartCommand"
 }
-
