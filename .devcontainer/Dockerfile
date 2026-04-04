@@ -5,6 +5,7 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 ARG TZ
 ENV TZ="$TZ"
 ARG HADOLINT_VERSION=v2.14.0
+ARG BUILDX_VERSION=v0.30.1
 ARG DOCKER_CLI_VERSION=29.3.0
 ARG KIND_VERSION=v0.31.0
 ARG KUBECTL_VERSION=v1.33.10
@@ -20,10 +21,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 ADD https://github.com/hadolint/hadolint/releases/download/${HADOLINT_VERSION}/hadolint-Linux-arm64 /usr/local/bin/hadolint
+ADD https://github.com/docker/buildx/releases/download/${BUILDX_VERSION}/buildx-${BUILDX_VERSION}.linux-arm64 /usr/local/libexec/docker/cli-plugins/docker-buildx
 ADD https://download.docker.com/linux/static/stable/aarch64/docker-${DOCKER_CLI_VERSION}.tgz /tmp/docker.tgz
 ADD https://github.com/kubernetes-sigs/kind/releases/download/${KIND_VERSION}/kind-linux-arm64 /usr/local/bin/kind
 ADD https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/arm64/kubectl /usr/local/bin/kubectl
-RUN chmod +x /usr/local/bin/hadolint /usr/local/bin/kind /usr/local/bin/kubectl \
+RUN chmod +x /usr/local/bin/hadolint /usr/local/bin/kind /usr/local/bin/kubectl /usr/local/libexec/docker/cli-plugins/docker-buildx \
   && tar -xzf /tmp/docker.tgz -C /tmp \
   && mv /tmp/docker/docker /usr/local/bin/docker \
   && rm -rf /tmp/docker /tmp/docker.tgz
