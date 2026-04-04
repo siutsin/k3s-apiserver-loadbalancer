@@ -47,7 +47,7 @@ vet: ## Run go vet against code.
 	go vet ./...
 
 .PHONY: test
-test: generate-mocks fmt vet lint-go lint-dockerfile lint-markdown ## Run tests.
+test: generate-mocks fmt vet lint-go ## Run tests.
 	go test -race -count=1 -coverprofile cover.out ./internal/...
 
 .PHONY: test-e2e

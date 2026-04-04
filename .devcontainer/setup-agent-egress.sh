@@ -33,7 +33,8 @@ docker_container_exists() {
 }
 
 find_conflicting_docker_network() {
-  docker network ls --format '{{.Name}}' | while IFS= read -r network_name; do
+  networks=$(docker network ls --format '{{.Name}}')
+  for network_name in $networks; do
     [ "$network_name" = "$INTERNAL_NETWORK" ] && continue
 
     subnet=$(docker network inspect --format '{{range .IPAM.Config}}{{.Subnet}}{{end}}' "$network_name" 2>/dev/null || true)
