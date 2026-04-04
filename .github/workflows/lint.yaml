@@ -63,9 +63,11 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Install hadolint
+        env:
+          HADOLINT_VERSION: ${{ steps.hadolint-version.outputs.version }}
         run: |
           curl -Lo /usr/local/bin/hadolint \
-            "https://github.com/hadolint/hadolint/releases/download/${{ steps.hadolint-version.outputs.version }}/hadolint-Linux-x86_64"
+            "https://github.com/hadolint/hadolint/releases/download/${HADOLINT_VERSION}/hadolint-Linux-x86_64"
           chmod +x /usr/local/bin/hadolint
 
       - name: Run Dockerfile lint

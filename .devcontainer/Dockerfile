@@ -22,17 +22,23 @@ RUN set -euo pipefail \
   && docker_cli_version="$(awk -F= '/^DOCKER_CLI_VERSION=/{sub(/^v/, "", $2); print $2}' /tmp/tool-versions.env)" \
   && kind_version="$(awk -F= '/^KIND_VERSION=/{sub(/^v/, "", $2); print $2}' /tmp/tool-versions.env)" \
   && kubectl_version="$(awk -F= '/^KUBECTL_VERSION=/{sub(/^v/, "", $2); print $2}' /tmp/tool-versions.env)" \
+  && debian_arch="$(dpkg --print-architecture)" \
+  && case "$debian_arch" in \
+    amd64) hadolint_arch='x86_64'; buildx_arch='amd64'; docker_cli_arch='x86_64'; kind_arch='amd64'; kubectl_arch='amd64' ;; \
+    arm64) hadolint_arch='arm64'; buildx_arch='arm64'; docker_cli_arch='aarch64'; kind_arch='arm64'; kubectl_arch='arm64' ;; \
+    *) echo "Unsupported architecture: $debian_arch" >&2; exit 1 ;; \
+  esac \
   && test -n "$hadolint_version" \
   && test -n "$buildx_version" \
   && test -n "$docker_cli_version" \
   && test -n "$kind_version" \
   && test -n "$kubectl_version" \
   && mkdir -p /usr/local/libexec/docker/cli-plugins \
-  && curl -fsSL "https://github.com/hadolint/hadolint/releases/download/v${hadolint_version}/hadolint-Linux-arm64" -o /usr/local/bin/hadolint \
-  && curl -fsSL "https://github.com/docker/buildx/releases/download/v${buildx_version}/buildx-v${buildx_version}.linux-arm64" -o /usr/local/libexec/docker/cli-plugins/docker-buildx \
-  && curl -fsSL "https://download.docker.com/linux/static/stable/aarch64/docker-${docker_cli_version}.tgz" -o /tmp/docker.tgz \
-  && curl -fsSL "https://github.com/kubernetes-sigs/kind/releases/download/v${kind_version}/kind-linux-arm64" -o /usr/local/bin/kind \
-  && curl -fsSL "https://dl.k8s.io/release/v${kubectl_version}/bin/linux/arm64/kubectl" -o /usr/local/bin/kubectl \
+  && curl -fsSL "https://github.com/hadolint/hadolint/releases/download/v${hadolint_version}/hadolint-Linux-${hadolint_arch}" -o /usr/local/bin/hadolint \
+  && curl -fsSL "https://github.com/docker/buildx/releases/download/v${buildx_version}/buildx-v${buildx_version}.linux-${buildx_arch}" -o /usr/local/libexec/docker/cli-plugins/docker-buildx \
+  && curl -fsSL "https://download.docker.com/linux/static/stable/${docker_cli_arch}/docker-${docker_cli_version}.tgz" -o /tmp/docker.tgz \
+  && curl -fsSL "https://github.com/kubernetes-sigs/kind/releases/download/v${kind_version}/kind-linux-${kind_arch}" -o /usr/local/bin/kind \
+  && curl -fsSL "https://dl.k8s.io/release/v${kubectl_version}/bin/linux/${kubectl_arch}/kubectl" -o /usr/local/bin/kubectl \
   && chmod +x /usr/local/bin/hadolint /usr/local/bin/kind /usr/local/bin/kubectl /usr/local/libexec/docker/cli-plugins/docker-buildx \
   && tar -xzf /tmp/docker.tgz -C /tmp \
   && mv /tmp/docker/docker /usr/local/bin/docker \
