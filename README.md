@@ -14,7 +14,7 @@ In environments like k3s, where the API server is not running as a pod but direc
 create another service that selects the API server nodes. This operator simplifies the process by automatically updating
 the existing `kubernetes` service, ensuring it is consistently configured as a `LoadBalancer`.
 
-The external IP of the `LoadBalancer` should be configured by a separate component such as Cilium's IP Pool with L2
+The external IP of the `LoadBalancer` is typically configured by a separate component such as Cilium's IP Pool with L2
 announcement or MetalLB in L2 mode. These components handle the allocation and advertisement for external IPs to provide
 external access to the `LoadBalancer` service.
 
@@ -22,25 +22,36 @@ external access to the `LoadBalancer` service.
 
 ### Prerequisites
 
-- go version v1.26.0+
-- Docker-compatible container runtime (e.g. Docker, Podman)
-- kubectl version v1.33.1+
+- Go v1.26.0+
+- Docker Desktop v4.67.0+
+- kubectl v1.33.1+
 - Access to a Kubernetes v1.33.1+ cluster
 
 ### Development container
 
-A preconfigured [devcontainer](.devcontainer/) is provided for a consistent development
-environment with all tools pre-installed. The container includes a firewall restricting
-outbound traffic to whitelisted domains only.
+A preconfigured [devcontainer](.devcontainer/) is provided for a consistent
+development environment with all tools pre-installed.
+
+This setup currently targets Docker Desktop. It mounts the host Docker socket
+and Claude login state into the container and routes outbound HTTP and HTTPS
+traffic through a restricted proxy sidecar.
 
 ```sh
 devcontainer up --workspace-folder .
-devcontainer exec --workspace-folder . claude /login
 devcontainer exec --workspace-folder . claude --dangerously-skip-permissions
 ```
 
+To rebuild the container after configuration changes:
+
+```sh
+devcontainer up --workspace-folder . --remove-existing-container --build-no-cache
+```
+
+See [`.devcontainer/README.md`](.devcontainer/README.md)
+for the detailed setup, network model, and allowlist.
+
 See the [Claude Code devcontainer documentation](https://code.claude.com/docs/en/devcontainer)
-for details.
+for Claude-specific workflow details.
 
 ### Deploy on the cluster
 

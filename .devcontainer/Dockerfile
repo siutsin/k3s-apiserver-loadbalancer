@@ -4,19 +4,29 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 ARG TZ
 ENV TZ="$TZ"
+ARG HADOLINT_VERSION=v2.14.0
+ARG DOCKER_CLI_VERSION=29.3.0
+ARG KIND_VERSION=v0.31.0
+ARG KUBECTL_VERSION=v1.33.10
 
-# Install development tools and iptables/ipset
+# Install development tools
 RUN apt-get update && apt-get install -y --no-install-recommends \
   aggregate=1.6-8 \
   bind9-dnsutils=1:9.20.21-1~deb13u1 \
-  iproute2=6.15.0-1 \
-  ipset=7.22-1+b1 \
-  iptables=1.8.11-2 \
   jq=1.7.1-6+deb13u1 \
   nodejs=20.19.2+dfsg-1+deb13u2 \
   npm=9.2.0~ds1-3 \
   sudo=1.9.16p2-3+deb13u1 \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+ADD https://github.com/hadolint/hadolint/releases/download/${HADOLINT_VERSION}/hadolint-Linux-arm64 /usr/local/bin/hadolint
+ADD https://download.docker.com/linux/static/stable/aarch64/docker-${DOCKER_CLI_VERSION}.tgz /tmp/docker.tgz
+ADD https://github.com/kubernetes-sigs/kind/releases/download/${KIND_VERSION}/kind-linux-arm64 /usr/local/bin/kind
+ADD https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/arm64/kubectl /usr/local/bin/kubectl
+RUN chmod +x /usr/local/bin/hadolint /usr/local/bin/kind /usr/local/bin/kubectl \
+  && tar -xzf /tmp/docker.tgz -C /tmp \
+  && mv /tmp/docker/docker /usr/local/bin/docker \
+  && rm -rf /tmp/docker /tmp/docker.tgz
 
 # Create non-root user
 ARG USERNAME=dev
@@ -48,26 +58,14 @@ ENV PATH=$PATH:/usr/local/share/npm-global/bin:/usr/local/go/bin:/home/$USERNAME
 # Switch to root for system-wide installs
 USER root
 
-# Install kind
-RUN ARCH=$(dpkg --print-architecture) \
-  && KIND_VERSION=$(curl -s https://api.github.com/repos/kubernetes-sigs/kind/releases/latest | grep '"tag_name"' | cut -d'"' -f4) \
-  && curl -Lo /usr/local/bin/kind "https://kind.sigs.k8s.io/dl/${KIND_VERSION}/kind-linux-${ARCH}" \
-  && chmod +x /usr/local/bin/kind
-
-# Install kubectl
-RUN ARCH=$(dpkg --print-architecture) \
-  && KUBECTL_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt) \
-  && curl -Lo /usr/local/bin/kubectl "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${ARCH}/kubectl" \
-  && chmod +x /usr/local/bin/kubectl
-
 # Install Claude Code
 ARG CLAUDE_CODE_VERSION=latest
 RUN npm install -g @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}
 
-# Copy and set up firewall script
-COPY init-firewall.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/init-firewall.sh \
-  && echo "$USERNAME ALL=(root) NOPASSWD: /usr/local/bin/init-firewall.sh" > /etc/sudoers.d/$USERNAME-firewall \
-  && chmod 0440 /etc/sudoers.d/$USERNAME-firewall
+# Copy and set up scripts
+COPY on-create.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/on-create.sh \
+  && echo "$USERNAME ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/$USERNAME \
+  && chmod 0440 /etc/sudoers.d/$USERNAME
 
 USER $USERNAME

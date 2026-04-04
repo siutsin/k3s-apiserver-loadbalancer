@@ -6,22 +6,16 @@
       "TZ": "${localEnv:TZ:UTC}"
     }
   },
-  "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {
-      "moby": false
-    }
-  },
-
+  "initializeCommand": "env -u DOCKER_HOST ${localWorkspaceFolder}/.devcontainer/setup-agent-egress.sh ${devcontainerId}",
   "runArgs": [
-    "--cap-add=NET_ADMIN",
-    "--cap-add=NET_RAW",
-    "--network=host"
+    "--network=agent-internal-${devcontainerId}"
   ],
-
   "remoteUser": "dev",
 
   "mounts": [
     "source=claude-code-config-${devcontainerId},target=/home/dev/.claude,type=volume",
+    "source=${localEnv:HOME}/.docker/run/docker.sock,target=/var/run/docker.sock,type=bind",
+    "source=${localEnv:HOME}/.claude.json,target=/home/dev/.claude.json,type=bind",
     "source=${localEnv:HOME}/.claude/rules,target=/home/dev/.claude/rules,type=bind,readonly",
     "source=${localEnv:HOME}/.claude/skills,target=/home/dev/.claude/skills,type=bind,readonly",
     "source=${localEnv:HOME}/.claude/settings.json,target=/home/dev/.claude/settings.json,type=bind,readonly"
@@ -29,20 +23,12 @@
 
   "containerEnv": {
     "NODE_OPTIONS": "--max-old-space-size=4096",
-    "CLAUDE_CONFIG_DIR": "/home/dev/.claude"
+    "CLAUDE_CONFIG_DIR": "/home/dev/.claude",
+    "HTTP_PROXY": "http://10.89.1.2:3128",
+    "HTTPS_PROXY": "http://10.89.1.2:3128",
+    "ALL_PROXY": "http://10.89.1.2:3128",
+    "NO_PROXY": "localhost,127.0.0.1,kind-control-plane"
   },
 
-  "customizations": {
-    "jetbrains": {
-      "backend": "IntelliJ",
-      "plugins": [
-        "com.intellij.kubernetes",
-        "Docker"
-      ]
-    }
-  },
-
-  "onCreateCommand": "sudo chown dev:dev /home/dev/.claude && docker network create -d=bridge --subnet=172.19.0.0/24 kind || true",
-  "postStartCommand": "sudo /usr/local/bin/init-firewall.sh",
-  "waitFor": "postStartCommand"
+  "onCreateCommand": "/usr/local/bin/on-create.sh"
 }
