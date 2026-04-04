@@ -4,6 +4,7 @@ This directory contains the Docker Desktop-only development container setup for
 this repository.
 
 Use it when you want a reproducible local environment with:
+
 - the project toolchain preinstalled
 - Claude using the host `~/.claude.json` login state
 - outbound HTTP and HTTPS traffic restricted to a small allowlist
@@ -91,6 +92,9 @@ Each agent CLI should be tested directly rather than assumed to honor them.
 The internal network currently uses the fixed subnet `10.89.1.0/24`. If another
 Docker network already uses that subnet, startup will fail with an explicit
 error instead of silently conflicting.
+
+Shared tool versions used by both the devcontainer and CI are defined in the
+repository-level [`versions.env`](../versions.env) file.
 
 Claude authentication is shared from the host through the `~/.claude.json`
 bind mount, while the writable `/home/dev/.claude` directory remains isolated in

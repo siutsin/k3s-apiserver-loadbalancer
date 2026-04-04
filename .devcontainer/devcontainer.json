@@ -1,6 +1,7 @@
 {
   "name": "k3s API Server Load Balancer",
   "build": {
+    "context": "..",
     "dockerfile": "Dockerfile",
     "args": {
       "TZ": "${localEnv:TZ:UTC}"

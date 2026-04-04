@@ -4,11 +4,6 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 ARG TZ
 ENV TZ="$TZ"
-ARG HADOLINT_VERSION=v2.14.0
-ARG BUILDX_VERSION=v0.30.1
-ARG DOCKER_CLI_VERSION=29.3.0
-ARG KIND_VERSION=v0.31.0
-ARG KUBECTL_VERSION=v1.33.10
 
 # Install development tools
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -20,15 +15,28 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   sudo=1.9.16p2-3+deb13u1 \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-ADD https://github.com/hadolint/hadolint/releases/download/${HADOLINT_VERSION}/hadolint-Linux-arm64 /usr/local/bin/hadolint
-ADD https://github.com/docker/buildx/releases/download/${BUILDX_VERSION}/buildx-${BUILDX_VERSION}.linux-arm64 /usr/local/libexec/docker/cli-plugins/docker-buildx
-ADD https://download.docker.com/linux/static/stable/aarch64/docker-${DOCKER_CLI_VERSION}.tgz /tmp/docker.tgz
-ADD https://github.com/kubernetes-sigs/kind/releases/download/${KIND_VERSION}/kind-linux-arm64 /usr/local/bin/kind
-ADD https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/arm64/kubectl /usr/local/bin/kubectl
-RUN chmod +x /usr/local/bin/hadolint /usr/local/bin/kind /usr/local/bin/kubectl /usr/local/libexec/docker/cli-plugins/docker-buildx \
+COPY versions.env /tmp/tool-versions.env
+RUN set -euo pipefail \
+  && hadolint_version="$(awk -F= '/^HADOLINT_VERSION=/{sub(/^v/, "", $2); print $2}' /tmp/tool-versions.env)" \
+  && buildx_version="$(awk -F= '/^BUILDX_VERSION=/{sub(/^v/, "", $2); print $2}' /tmp/tool-versions.env)" \
+  && docker_cli_version="$(awk -F= '/^DOCKER_CLI_VERSION=/{sub(/^v/, "", $2); print $2}' /tmp/tool-versions.env)" \
+  && kind_version="$(awk -F= '/^KIND_VERSION=/{sub(/^v/, "", $2); print $2}' /tmp/tool-versions.env)" \
+  && kubectl_version="$(awk -F= '/^KUBECTL_VERSION=/{sub(/^v/, "", $2); print $2}' /tmp/tool-versions.env)" \
+  && test -n "$hadolint_version" \
+  && test -n "$buildx_version" \
+  && test -n "$docker_cli_version" \
+  && test -n "$kind_version" \
+  && test -n "$kubectl_version" \
+  && mkdir -p /usr/local/libexec/docker/cli-plugins \
+  && curl -fsSL "https://github.com/hadolint/hadolint/releases/download/v${hadolint_version}/hadolint-Linux-arm64" -o /usr/local/bin/hadolint \
+  && curl -fsSL "https://github.com/docker/buildx/releases/download/v${buildx_version}/buildx-v${buildx_version}.linux-arm64" -o /usr/local/libexec/docker/cli-plugins/docker-buildx \
+  && curl -fsSL "https://download.docker.com/linux/static/stable/aarch64/docker-${docker_cli_version}.tgz" -o /tmp/docker.tgz \
+  && curl -fsSL "https://github.com/kubernetes-sigs/kind/releases/download/v${kind_version}/kind-linux-arm64" -o /usr/local/bin/kind \
+  && curl -fsSL "https://dl.k8s.io/release/v${kubectl_version}/bin/linux/arm64/kubectl" -o /usr/local/bin/kubectl \
+  && chmod +x /usr/local/bin/hadolint /usr/local/bin/kind /usr/local/bin/kubectl /usr/local/libexec/docker/cli-plugins/docker-buildx \
   && tar -xzf /tmp/docker.tgz -C /tmp \
   && mv /tmp/docker/docker /usr/local/bin/docker \
-  && rm -rf /tmp/docker /tmp/docker.tgz
+  && rm -rf /tmp/docker /tmp/docker.tgz /tmp/tool-versions.env
 
 # Create non-root user
 ARG USERNAME=dev
@@ -65,7 +73,7 @@ ARG CLAUDE_CODE_VERSION=latest
 RUN npm install -g @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}
 
 # Copy and set up scripts
-COPY on-create.sh /usr/local/bin/
+COPY .devcontainer/on-create.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/on-create.sh \
   && echo "$USERNAME ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/$USERNAME \
   && chmod 0440 /etc/sudoers.d/$USERNAME

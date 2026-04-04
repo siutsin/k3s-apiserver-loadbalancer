@@ -8,10 +8,14 @@ on:
     branches:
       - master
     paths:
-      - '**.go'
+      - '**/*.go'
       - 'go.mod'
       - 'go.sum'
-      - 'Dockerfile'
+      - '**/Dockerfile'
+      - '**/*.Dockerfile'
+      - '**/*.md'
+      - '.github/workflows/lint.yaml'
+      - 'versions.env'
 
 jobs:
   go:
@@ -48,7 +52,41 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Run hadolint
-        uses: hadolint/hadolint-action@2332a7b74a6de0dda2e2221d575162eba76ba5e5 # v3.3.0
+      - name: Read hadolint version
+        id: hadolint-version
+        run: |
+          version="$(awk -F= '/^HADOLINT_VERSION=/{print $2}' versions.env)"
+          if [ -z "$version" ]; then
+            echo "Failed to read HADOLINT_VERSION from versions.env" >&2
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Install hadolint
+        run: |
+          curl -Lo /usr/local/bin/hadolint \
+            "https://github.com/hadolint/hadolint/releases/download/${{ steps.hadolint-version.outputs.version }}/hadolint-Linux-x86_64"
+          chmod +x /usr/local/bin/hadolint
+
+      - name: Run Dockerfile lint
+        run: make lint-dockerfile
+
+  markdown:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Clone the code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
-          dockerfile: Dockerfile
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+
+      - name: Run markdown lint
+        run: make lint-markdown
