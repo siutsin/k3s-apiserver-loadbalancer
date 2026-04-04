@@ -9,6 +9,11 @@ GOBIN=$(shell go env GOBIN)
 endif
 
 CONTAINER_TOOL ?= docker
+GOCACHE ?= $(CURDIR)/.cache/go-build
+GOLANGCI_LINT_CACHE ?= $(CURDIR)/.cache/golangci-lint
+export GOCACHE
+export GOLANGCI_LINT_CACHE
+DOCKER_ENV ?= env -u DOCKER_HOST
 
 # Setting SHELL to bash allows bash commands to be executed by recipes.
 # Options are set to exit when a recipe line exits non-zero or a piped command fails.
@@ -31,7 +36,7 @@ help:
 
 .PHONY: generate-mocks
 generate-mocks: mockgen ## Generate mock implementations for testing.
-	$(MOCKGEN) -destination=internal/controller/mocks/mock_client.go -package=mocks sigs.k8s.io/controller-runtime/pkg/client Client
+	$(MOCKGEN) -destination=mocks/mock_client.go -package=mocks sigs.k8s.io/controller-runtime/pkg/client Client
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
@@ -42,40 +47,48 @@ vet: ## Run go vet against code.
 	go vet ./...
 
 .PHONY: test
-test: generate-mocks fmt vet ## Run tests.
-	go test ./internal/... -coverprofile cover.out
+test: generate-mocks fmt vet lint-go ## Run tests.
+	go test -race -count=1 -coverprofile cover.out ./internal/...
 
 .PHONY: test-e2e
-test-e2e: generate-mocks fmt vet docker-build ## Run the e2e tests. Use LOCAL=true for fresh kind cluster.
+test-e2e: generate-mocks fmt vet docker-build ## Run the e2e tests. Local runs recreate kind; CI expects an existing cluster.
 	@command -v $(KIND) >/dev/null 2>&1 || { \
 		echo "Kind is not installed. Please install Kind manually."; \
 		exit 1; \
 	}
-	@if [ "$(LOCAL)" = "true" ]; then \
-		kind delete cluster --name kind; \
-		kind create cluster --name kind --config e2e/kind-config.yaml; \
+	@if [ "$${GITHUB_ACTIONS:-}" != "true" ]; then \
+		$(DOCKER_ENV) kind delete cluster --name kind; \
+		$(DOCKER_ENV) kind create cluster --name kind --config e2e/kind-config.yaml; \
+		mkdir -p "$$HOME/.kube"; \
+		if [ -f /.dockerenv ]; then \
+			current_network=$$($(DOCKER_ENV) docker inspect "$$HOSTNAME" --format '{{range $$name, $$network := .NetworkSettings.Networks}}{{println $$name}}{{end}}' | head -n1); \
+			$(DOCKER_ENV) docker network connect "$$current_network" kind-control-plane; \
+			$(DOCKER_ENV) $(KIND) get kubeconfig --name kind | \
+				sed 's|server: https://127.0.0.1:[0-9][0-9]*|server: https://kind-control-plane:6443|' \
+				> "$$HOME/.kube/config"; \
+		else \
+			$(DOCKER_ENV) $(KIND) get kubeconfig --name kind > "$$HOME/.kube/config"; \
+		fi; \
 	fi
+	NO_PROXY=$${NO_PROXY:+$${NO_PROXY},}kind-control-plane \
+	no_proxy=$${no_proxy:+$${no_proxy},}kind-control-plane \
 	CONTAINER_TOOL=$(CONTAINER_TOOL) go test ./e2e/ -v
-	@if [ "$(LOCAL)" = "true" ]; then \
-		kind delete cluster --name kind; \
-	fi
-
-.PHONY: test-e2e-podman
-test-e2e-podman: ## Run e2e tests using podman with a fresh kind cluster.
-	$(MAKE) test-e2e CONTAINER_TOOL=podman LOCAL=true
 
 ##@ Linting
 
 .PHONY: lint
-lint: golangci-lint ## Run golangci-lint linter
-	$(GOLANGCI_LINT) run
+lint: lint-go lint-dockerfile lint-markdown ## Run all lint targets.
 
-.PHONY: lint-fix
-lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
-	$(GOLANGCI_LINT) run --fix
+.PHONY: lint-go
+lint-go: golangci-lint ## Run golangci-lint linter
+	$(GOLANGCI_LINT) run ./...
 
-.PHONY: lint-config
-lint-config: golangci-lint ## Verify golangci-lint configuration
+.PHONY: lint-go-fix
+lint-go-fix: golangci-lint ## Run golangci-lint linter and perform fixes
+	$(GOLANGCI_LINT) run --fix ./...
+
+.PHONY: lint-go-config
+lint-go-config: golangci-lint ## Verify golangci-lint configuration
 	$(GOLANGCI_LINT) config verify
 
 ##@ Build
@@ -90,20 +103,20 @@ run: fmt vet ## Run a controller from your host.
 
 .PHONY: docker-build
 docker-build:
-	$(CONTAINER_TOOL) build -t ${IMG} .
+	DOCKER_BUILDKIT=1 $(DOCKER_ENV) $(CONTAINER_TOOL) build -t ${IMG} .
 
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.
-	$(CONTAINER_TOOL) push ${IMG}
+	$(DOCKER_ENV) $(CONTAINER_TOOL) push ${IMG}
 
 PLATFORMS ?= linux/arm64,linux/amd64,linux/s390x,linux/ppc64le
 .PHONY: docker-buildx
 docker-buildx: ## Build and push docker image for the manager for cross-platform support
 	sed -e '1 s/\(^FROM\)/FROM --platform=\$$\{BUILDPLATFORM\}/; t' -e ' 1,// s//FROM --platform=\$$\{BUILDPLATFORM\}/' Dockerfile > Dockerfile.cross
-	- $(CONTAINER_TOOL) buildx create --name k3s-apiserver-loadbalancer-builder
-	$(CONTAINER_TOOL) buildx use k3s-apiserver-loadbalancer-builder
-	- $(CONTAINER_TOOL) buildx build --push --platform=$(PLATFORMS) --tag ${IMG} -f Dockerfile.cross .
-	- $(CONTAINER_TOOL) buildx rm k3s-apiserver-loadbalancer-builder
+	- $(DOCKER_ENV) $(CONTAINER_TOOL) buildx create --name k3s-apiserver-loadbalancer-builder
+	$(DOCKER_ENV) $(CONTAINER_TOOL) buildx use k3s-apiserver-loadbalancer-builder
+	- $(DOCKER_ENV) $(CONTAINER_TOOL) buildx build --push --platform=$(PLATFORMS) --tag ${IMG} -f Dockerfile.cross .
+	- $(DOCKER_ENV) $(CONTAINER_TOOL) buildx rm k3s-apiserver-loadbalancer-builder
 	rm Dockerfile.cross
 
 IGNORE_NOT_FOUND ?= false
@@ -111,7 +124,9 @@ IGNORE_NOT_FOUND ?= false
 .PHONY: clean
 clean:
 	@echo "Cleaning up..."
-	rm -rf bin/ dist/ cover.out Dockerfile.cross
+	rm -rf .cache/ dist/ cover.out Dockerfile.cross
+	rm -rf bin/*/
+	rm -f bin/golangci-lint bin/golangci-lint-* bin/mockgen bin/mockgen-* bin/manager
 
 .PHONY: build-installer
 build-installer: ## Generate a consolidated YAML with the deployment.
@@ -131,13 +146,19 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 ##@ Dependencies
 
 LOCALBIN ?= $(shell pwd)/bin
+GOOS ?= $(shell go env GOOS)
+GOARCH ?= $(shell go env GOARCH)
+TOOLBIN ?= $(LOCALBIN)/$(GOOS)-$(GOARCH)
 $(LOCALBIN):
 	mkdir -p $(LOCALBIN)
+$(TOOLBIN): $(LOCALBIN)
+	mkdir -p $(TOOLBIN)
 
 KUBECTL ?= kubectl
 KIND ?= kind
-GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
-MOCKGEN ?= $(LOCALBIN)/mockgen
+GOLANGCI_LINT ?= $(TOOLBIN)/golangci-lint
+MOCKGEN ?= $(TOOLBIN)/mockgen
+DOCKERFILES := $(shell find . -type f \( -name 'Dockerfile' -o -name '*.Dockerfile' \))
 
 GOLANGCI_LINT_VERSION ?= $(shell go list -m -f "{{ .Version }}" github.com/golangci/golangci-lint/v2)
 MOCKGEN_VERSION ?= $(shell go list -m -f "{{ .Version }}" go.uber.org/mock)
@@ -148,25 +169,25 @@ set -e; \
 package=$(2)@$(3) ;\
 echo "Downloading $${package}" ;\
 rm -f $(1) || true ;\
-GOBIN=$(LOCALBIN) go install $${package} ;\
+GOBIN=$(TOOLBIN) go install $${package} ;\
 mv $(1) $(1)-$(3) ;\
 } ;\
-ln -sf $(1)-$(3) $(1)
+ln -sf $(notdir $(1))-$(3) $(1)
 endef
 
 .PHONY: golangci-lint
 golangci-lint: $(GOLANGCI_LINT) ## Download golangci-lint locally if necessary.
-$(GOLANGCI_LINT): $(LOCALBIN)
+$(GOLANGCI_LINT): $(TOOLBIN)
 	$(call go-install-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/v2/cmd/golangci-lint,$(GOLANGCI_LINT_VERSION))
 
 .PHONY: mockgen
 mockgen: $(MOCKGEN) ## Download mockgen locally if necessary.
-$(MOCKGEN): $(LOCALBIN)
+$(MOCKGEN): $(TOOLBIN)
 	$(call go-install-tool,$(MOCKGEN),go.uber.org/mock/mockgen,$(MOCKGEN_VERSION))
 
 .PHONY: lint-dockerfile
-lint-dockerfile: ## Run hadolint on Dockerfile.
-	hadolint Dockerfile
+lint-dockerfile: ## Run hadolint on Dockerfiles.
+	hadolint $(DOCKERFILES)
 
 .PHONY: lint-markdown
 lint-markdown:

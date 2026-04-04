@@ -8,9 +8,10 @@ on:
     branches:
       - master
     paths:
-      - '**.go'
+      - '**/*.go'
       - 'go.mod'
       - 'go.sum'
+      - '.github/workflows/test.yaml'
 
 jobs:
   test:
