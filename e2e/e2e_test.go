@@ -19,6 +19,7 @@ const namespace = "k3s-apiserver-loadbalancer-system"
 const serviceAccountName = "k3s-apiserver-loadbalancer-controller-manager"
 const metricsServiceName = "k3s-apiserver-loadbalancer-controller-manager-metrics-service"
 const metricsRoleBindingName = "k3s-apiserver-loadbalancer-metrics-binding"
+const metricsProbeImage = "curlimages/curl:latest"
 
 var projectImage = "example.com/k3s-apiserver-loadbalancer:v0.0.1"
 
@@ -42,6 +43,16 @@ func setup() error {
 	fmt.Fprintln(os.Stderr, "loading the manager image on kind")
 	if err := loadImageToKindCluster(projectImage); err != nil {
 		return fmt.Errorf("failed to load image: %w", err)
+	}
+
+	fmt.Fprintln(os.Stderr, "pulling the metrics probe image")
+	if err := pullImage(metricsProbeImage); err != nil {
+		return fmt.Errorf("failed to pull metrics probe image: %w", err)
+	}
+
+	fmt.Fprintln(os.Stderr, "loading the metrics probe image on kind")
+	if err := loadImageToKindCluster(metricsProbeImage); err != nil {
+		return fmt.Errorf("failed to load metrics probe image: %w", err)
 	}
 
 	fmt.Fprintln(os.Stderr, "creating manager namespace")
@@ -251,13 +262,15 @@ func TestManager(t *testing.T) {
 		t.Log("creating the curl-metrics pod to access the metrics endpoint")
 		cmd = exec.Command("kubectl", "run", "curl-metrics", "--restart=Never",
 			"--namespace", namespace,
-			"--image=curlimages/curl:latest",
+			"--image="+metricsProbeImage,
+			"--image-pull-policy=IfNotPresent",
 			"--overrides",
 			fmt.Sprintf(`{
 				"spec": {
 					"containers": [{
 						"name": "curl",
-						"image": "curlimages/curl:latest",
+						"image": %q,
+						"imagePullPolicy": "IfNotPresent",
 						"command": ["/bin/sh", "-c"],
 						"args": ["curl -v -k -H 'Authorization: Bearer %s' https://%s:8443/metrics"],
 						"securityContext": {
@@ -274,7 +287,7 @@ func TestManager(t *testing.T) {
 					}],
 					"serviceAccount": "%s"
 				}
-			}`, token, metricsServiceName, serviceAccountName))
+			}`, metricsProbeImage, token, metricsServiceName, serviceAccountName))
 		_, err = run(cmd)
 		require.NoError(t, err, "failed to create curl-metrics pod")
 

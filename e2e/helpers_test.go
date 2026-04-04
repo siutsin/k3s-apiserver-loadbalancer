@@ -50,14 +50,7 @@ func loadImageToKindCluster(name string) error {
 		cluster = v
 	}
 
-	containerTool := os.Getenv("CONTAINER_TOOL")
-	if containerTool == "" {
-		if _, err := exec.LookPath("docker"); err == nil {
-			containerTool = "docker"
-		} else {
-			containerTool = "podman"
-		}
-	}
+	containerTool := containerTool()
 
 	if containerTool == "podman" {
 		return loadImageViaArchive(name, cluster)
@@ -66,6 +59,27 @@ func loadImageToKindCluster(name string) error {
 	cmd := exec.Command("kind", "load", "docker-image", name, "--name", cluster)
 	_, err := run(cmd)
 	return err
+}
+
+// pullImage pulls a container image with the active container tool.
+func pullImage(name string) error {
+	cmd := exec.Command(containerTool(), "pull", name)
+	_, err := run(cmd)
+	return err
+}
+
+// containerTool returns the active local container runtime CLI.
+func containerTool() string {
+	containerTool := os.Getenv("CONTAINER_TOOL")
+	if containerTool != "" {
+		return containerTool
+	}
+
+	if _, err := exec.LookPath("docker"); err == nil {
+		return "docker"
+	}
+
+	return "podman"
 }
 
 // loadImageViaArchive saves the image to a temporary archive and loads it into kind.
