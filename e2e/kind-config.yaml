@@ -13,6 +13,8 @@ nodes:
     kind: ClusterConfiguration
     apiServer:
       certSANs:
+      - 127.0.0.1
+      - localhost
       - kind-control-plane
   extraPortMappings:
   - containerPort: 80
