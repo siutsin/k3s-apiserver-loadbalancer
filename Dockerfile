@@ -1,5 +1,5 @@
 # golang:1.26
-FROM docker.io/golang@sha256:595c7847cff97c9a9e76f015083c481d26078f961c9c8dca3923132f51fe12f1 AS builder
+FROM docker.io/golang@sha256:313da62c27e4295a87d44aa9a7953e4de59738d74e15f2b1ec15eb0f0ba71a04 AS builder
 ARG TARGETOS
 ARG TARGETARCH
 
