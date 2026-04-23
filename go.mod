@@ -6,9 +6,9 @@ require (
 	github.com/golangci/golangci-lint/v2 v2.11.4
 	github.com/stretchr/testify v1.11.1
 	go.uber.org/mock v0.6.0
-	k8s.io/api v0.35.3
+	k8s.io/api v0.35.4
 	k8s.io/apimachinery v0.35.4
-	k8s.io/client-go v0.35.3
+	k8s.io/client-go v0.35.4
 	sigs.k8s.io/controller-runtime v0.23.3
 )
 
