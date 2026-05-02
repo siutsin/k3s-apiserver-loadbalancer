@@ -131,13 +131,17 @@ clean:
 .PHONY: build-installer
 build-installer: ## Generate a consolidated YAML with the deployment.
 	mkdir -p dist
-	sed 's|image: controller:latest|image: ${IMG}|' deploy/install-template.yaml > dist/install.yaml
+	@image_no_digest="$${IMG%%@*}"; \
+	version="$${image_no_digest##*:}"; \
+	sed -e 's|image: controller:latest|image: ${IMG}|' -e "s|app.kubernetes.io/version: latest|app.kubernetes.io/version: $$version|g" deploy/install-template.yaml > dist/install.yaml
 
 ##@ Deployment
 
 .PHONY: deploy
 deploy: ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	sed 's|image: controller:latest|image: ${IMG}|' deploy/install-template.yaml | $(KUBECTL) apply -f -
+	@image_no_digest="$${IMG%%@*}"; \
+	version="$${image_no_digest##*:}"; \
+	sed -e 's|image: controller:latest|image: ${IMG}|' -e "s|app.kubernetes.io/version: latest|app.kubernetes.io/version: $$version|g" deploy/install-template.yaml | $(KUBECTL) apply -f -
 
 .PHONY: undeploy
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
