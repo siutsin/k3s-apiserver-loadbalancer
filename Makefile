@@ -121,6 +121,18 @@ docker-buildx: ## Build and push docker image for the manager for cross-platform
 
 IGNORE_NOT_FOUND ?= false
 
+define render-install-yaml
+image_no_digest="$${IMG%%@*}"; \
+last_segment="$${image_no_digest##*/}"; \
+case "$$last_segment" in \
+  *:*) version="$${last_segment##*:}" ;; \
+  *) version="latest" ;; \
+esac; \
+sed -e 's|image: controller:latest|image: ${IMG}|' \
+    -e "s|app.kubernetes.io/version: __APP_VERSION__|app.kubernetes.io/version: $$version|g" \
+    deploy/install-template.yaml
+endef
+
 .PHONY: clean
 clean:
 	@echo "Cleaning up..."
@@ -131,17 +143,13 @@ clean:
 .PHONY: build-installer
 build-installer: ## Generate a consolidated YAML with the deployment.
 	mkdir -p dist
-	@image_no_digest="$${IMG%%@*}"; \
-	version="$${image_no_digest##*:}"; \
-	sed -e 's|image: controller:latest|image: ${IMG}|' -e "s|app.kubernetes.io/version: latest|app.kubernetes.io/version: $$version|g" deploy/install-template.yaml > dist/install.yaml
+	@$(render-install-yaml) > dist/install.yaml
 
 ##@ Deployment
 
 .PHONY: deploy
 deploy: ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	@image_no_digest="$${IMG%%@*}"; \
-	version="$${image_no_digest##*:}"; \
-	sed -e 's|image: controller:latest|image: ${IMG}|' -e "s|app.kubernetes.io/version: latest|app.kubernetes.io/version: $$version|g" deploy/install-template.yaml | $(KUBECTL) apply -f -
+	@$(render-install-yaml) | $(KUBECTL) apply -f -
 
 .PHONY: undeploy
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
