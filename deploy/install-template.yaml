@@ -3,6 +3,7 @@ kind: Namespace
 metadata:
   labels:
     app.kubernetes.io/name: k3s-apiserver-loadbalancer
+    app.kubernetes.io/version: __APP_VERSION__
     control-plane: controller-manager
   name: k3s-apiserver-loadbalancer-system
 ---
@@ -147,6 +148,7 @@ kind: Service
 metadata:
   labels:
     app.kubernetes.io/name: k3s-apiserver-loadbalancer
+    app.kubernetes.io/version: __APP_VERSION__
     control-plane: controller-manager
   name: k3s-apiserver-loadbalancer-controller-manager-metrics-service
   namespace: k3s-apiserver-loadbalancer-system
@@ -180,6 +182,7 @@ spec:
         kubectl.kubernetes.io/default-container: manager
       labels:
         app.kubernetes.io/name: k3s-apiserver-loadbalancer
+        app.kubernetes.io/version: __APP_VERSION__
         control-plane: controller-manager
     spec:
       containers:
