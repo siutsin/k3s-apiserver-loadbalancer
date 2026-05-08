@@ -3,7 +3,7 @@ module github.com/siutsin/k3s-apiserver-loadbalancer
 go 1.26.0
 
 require (
-	github.com/golangci/golangci-lint/v2 v2.12.0
+	github.com/golangci/golangci-lint/v2 v2.12.1
 	github.com/stretchr/testify v1.11.1
 	go.uber.org/mock v0.6.0
 	k8s.io/api v0.36.0
