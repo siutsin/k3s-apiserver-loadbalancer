@@ -1,4 +1,4 @@
-FROM docker.io/golang:1.26@sha256:efaccb5b497e90df3ebe5216cc25cd9f98e73874e2d638b56e38d4a3f098c41c
+FROM docker.io/golang:1.26@sha256:257c1f60c465aa5d22b4d81f9ae73643a12f228a10165c658ec77bd6ff791f34
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
