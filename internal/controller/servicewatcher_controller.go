@@ -36,11 +36,8 @@ func (r *ServiceWatcherReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	}
 	if service.Namespace == "default" && service.Name == "kubernetes" && service.Spec.Type == corev1.ServiceTypeClusterIP {
 		log.Info("Service has been updated", "service", service.Name, "type", service.Spec.Type)
-		originalResourceVersion := service.ResourceVersion
 		service.Spec.Type = corev1.ServiceTypeLoadBalancer
-		// Ensure the resource version matches to prevent race conditions and ensure consistency when
-		// multiple clients try to update the same resource simultaneously
-		service.ResourceVersion = originalResourceVersion
+		// Update keeps the fetched resource version, so Kubernetes rejects stale writes with a conflict.
 		if err := r.Update(ctx, &service); err != nil {
 			log.Error(err, "failed to update Service to LoadBalancer")
 			return ctrl.Result{}, err
