@@ -20,6 +20,11 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
+const (
+	targetServiceName      = "kubernetes"
+	targetServiceNamespace = "default"
+)
+
 // newTestScheme creates a runtime.Scheme with core and client-go types registered.
 func newTestScheme() *runtime.Scheme {
 	s := runtime.NewScheme()
@@ -33,8 +38,8 @@ func TestServiceWatcherReconciler_LoadBalancerUpdate(t *testing.T) {
 
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            "kubernetes",
-			Namespace:       "default",
+			Name:            targetServiceName,
+			Namespace:       targetServiceNamespace,
 			ResourceVersion: "1",
 		},
 		Spec: corev1.ServiceSpec{
@@ -44,7 +49,7 @@ func TestServiceWatcherReconciler_LoadBalancerUpdate(t *testing.T) {
 
 	mockClient := mocks.NewMockClient(mockCtrl)
 	mockClient.EXPECT().
-		Get(gomock.Any(), types.NamespacedName{Name: "kubernetes", Namespace: "default"}, gomock.Any()).
+		Get(gomock.Any(), types.NamespacedName{Name: targetServiceName, Namespace: targetServiceNamespace}, gomock.Any()).
 		DoAndReturn(func(_ context.Context, _ client.ObjectKey, obj client.Object, _ ...client.GetOption) error {
 			*obj.(*corev1.Service) = *svc
 			return nil
@@ -64,8 +69,8 @@ func TestServiceWatcherReconciler_LoadBalancerUpdate(t *testing.T) {
 
 	_, err := reconciler.Reconcile(context.Background(), ctrl.Request{
 		NamespacedName: types.NamespacedName{
-			Name:      "kubernetes",
-			Namespace: "default",
+			Name:      targetServiceName,
+			Namespace: targetServiceNamespace,
 		},
 	})
 
@@ -89,8 +94,8 @@ func TestServiceWatcherReconciler_GetError(t *testing.T) {
 
 	_, err := reconciler.Reconcile(context.Background(), ctrl.Request{
 		NamespacedName: types.NamespacedName{
-			Name:      "kubernetes",
-			Namespace: "default",
+			Name:      targetServiceName,
+			Namespace: targetServiceNamespace,
 		},
 	})
 
@@ -102,8 +107,8 @@ func TestServiceWatcherReconciler_UpdateError(t *testing.T) {
 
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            "kubernetes",
-			Namespace:       "default",
+			Name:            targetServiceName,
+			Namespace:       targetServiceNamespace,
 			ResourceVersion: "1",
 		},
 		Spec: corev1.ServiceSpec{
@@ -131,8 +136,8 @@ func TestServiceWatcherReconciler_UpdateError(t *testing.T) {
 
 	_, err := reconciler.Reconcile(context.Background(), ctrl.Request{
 		NamespacedName: types.NamespacedName{
-			Name:      "kubernetes",
-			Namespace: "default",
+			Name:      targetServiceName,
+			Namespace: targetServiceNamespace,
 		},
 	})
 
@@ -182,8 +187,8 @@ func TestServiceWatcherReconciler_SkipsAlreadyLoadBalancer(t *testing.T) {
 
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            "kubernetes",
-			Namespace:       "default",
+			Name:            targetServiceName,
+			Namespace:       targetServiceNamespace,
 			ResourceVersion: "1",
 		},
 		Spec: corev1.ServiceSpec{
@@ -207,8 +212,8 @@ func TestServiceWatcherReconciler_SkipsAlreadyLoadBalancer(t *testing.T) {
 
 	_, err := reconciler.Reconcile(context.Background(), ctrl.Request{
 		NamespacedName: types.NamespacedName{
-			Name:      "kubernetes",
-			Namespace: "default",
+			Name:      targetServiceName,
+			Namespace: targetServiceNamespace,
 		},
 	})
 
