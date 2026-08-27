@@ -6,9 +6,9 @@ require (
 	github.com/golangci/golangci-lint/v2 v2.13.0
 	github.com/stretchr/testify v1.12.1
 	go.uber.org/mock v0.6.0
-	k8s.io/api v0.36.3
-	k8s.io/apimachinery v0.36.3
-	k8s.io/client-go v0.36.3
+	k8s.io/api v0.36.4
+	k8s.io/apimachinery v0.36.4
+	k8s.io/client-go v0.36.4
 	sigs.k8s.io/controller-runtime v0.24.1
 )
 
@@ -275,7 +275,7 @@ require (
 	k8s.io/component-base v0.36.0 // indirect
 	k8s.io/klog/v2 v2.140.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20260330154417-16be699c7b31 // indirect
-	k8s.io/streaming v0.36.3 // indirect
+	k8s.io/streaming v0.36.4 // indirect
 	k8s.io/utils v0.0.0-20260319190234-28399d86e0b5 // indirect
 	mvdan.cc/gofumpt v0.11.0 // indirect
 	mvdan.cc/unparam v0.0.0-20260818115549-3f964bcb5673 // indirect
