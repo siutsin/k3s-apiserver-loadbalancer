@@ -24,18 +24,6 @@ metadata:
   namespace: k3s-apiserver-loadbalancer-system
 rules:
 - apiGroups:
-  - ""
-  resources:
-  - configmaps
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - patch
-  - delete
-- apiGroups:
   - coordination.k8s.io
   resources:
   - leases
