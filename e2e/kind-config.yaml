@@ -5,21 +5,9 @@ nodes:
 - role: control-plane
   kubeadmConfigPatches:
   - |
-    kind: InitConfiguration
-    nodeRegistration:
-      kubeletExtraArgs:
-        node-labels: "ingress-ready=true"
-  - |
     kind: ClusterConfiguration
     apiServer:
       certSANs:
       - 127.0.0.1
       - localhost
       - kind-control-plane
-  extraPortMappings:
-  - containerPort: 80
-    hostPort: 30080
-    protocol: TCP
-  - containerPort: 443
-    hostPort: 30443
-    protocol: TCP
