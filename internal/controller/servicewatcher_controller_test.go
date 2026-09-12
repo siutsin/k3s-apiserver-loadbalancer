@@ -5,19 +5,16 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/siutsin/k3s-apiserver-loadbalancer/internal/controller"
-	"github.com/siutsin/k3s-apiserver-loadbalancer/mocks"
-	"go.uber.org/mock/gomock"
 )
 
 const (
@@ -25,197 +22,115 @@ const (
 	targetServiceNamespace = "default"
 )
 
-// newTestScheme creates a runtime.Scheme with core and client-go types registered.
-func newTestScheme() *runtime.Scheme {
+type errClient struct {
+	client.Client
+	getErr    error
+	updateErr error
+}
+
+func (c errClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+	if c.getErr != nil {
+		return c.getErr
+	}
+	return c.Client.Get(ctx, key, obj, opts...)
+}
+
+func (c errClient) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
+	if c.updateErr != nil {
+		return c.updateErr
+	}
+	return c.Client.Update(ctx, obj, opts...)
+}
+
+func testScheme(t *testing.T) *runtime.Scheme {
+	t.Helper()
 	s := runtime.NewScheme()
-	_ = corev1.AddToScheme(s)
-	_ = clientgoscheme.AddToScheme(s)
+	require.NoError(t, corev1.AddToScheme(s))
 	return s
 }
 
-func TestServiceWatcherReconciler_LoadBalancerUpdate(t *testing.T) {
-	mockCtrl := gomock.NewController(t)
-
-	svc := &corev1.Service{
+func clusterIPService(name, namespace string) *corev1.Service {
+	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            targetServiceName,
-			Namespace:       targetServiceNamespace,
+			Name:            name,
+			Namespace:       namespace,
 			ResourceVersion: "1",
 		},
 		Spec: corev1.ServiceSpec{
 			Type: corev1.ServiceTypeClusterIP,
 		},
 	}
+}
 
-	mockClient := mocks.NewMockClient(mockCtrl)
-	mockClient.EXPECT().
-		Get(gomock.Any(), types.NamespacedName{Name: targetServiceName, Namespace: targetServiceNamespace}, gomock.Any()).
-		DoAndReturn(func(_ context.Context, _ client.ObjectKey, obj client.Object, _ ...client.GetOption) error {
-			*obj.(*corev1.Service) = *svc
-			return nil
-		})
-	mockClient.EXPECT().
-		Update(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(_ context.Context, obj client.Object, _ ...client.UpdateOption) error {
-			updated := obj.(*corev1.Service)
-			assert.Equal(t, corev1.ServiceTypeLoadBalancer, updated.Spec.Type)
-			return nil
-		})
-
-	reconciler := &controller.ServiceWatcherReconciler{
-		Client: mockClient,
-		Scheme: newTestScheme(),
-	}
+func TestServiceWatcherReconciler_LoadBalancerUpdate(t *testing.T) {
+	svc := clusterIPService(targetServiceName, targetServiceNamespace)
+	c := fake.NewClientBuilder().WithScheme(testScheme(t)).WithObjects(svc).Build()
+	reconciler := &controller.ServiceWatcherReconciler{Client: c}
 
 	_, err := reconciler.Reconcile(context.Background(), ctrl.Request{
-		NamespacedName: types.NamespacedName{
-			Name:      targetServiceName,
-			Namespace: targetServiceNamespace,
-		},
+		NamespacedName: types.NamespacedName{Name: targetServiceName, Namespace: targetServiceNamespace},
 	})
-
 	require.NoError(t, err)
+
+	updated := &corev1.Service{}
+	require.NoError(t, c.Get(context.Background(), types.NamespacedName{
+		Name: targetServiceName, Namespace: targetServiceNamespace,
+	}, updated))
+	require.Equal(t, corev1.ServiceTypeLoadBalancer, updated.Spec.Type)
 }
 
 func TestServiceWatcherReconciler_GetError(t *testing.T) {
-	mockCtrl := gomock.NewController(t)
-
-	errNotFound := errors.New("not found")
-
-	mockClient := mocks.NewMockClient(mockCtrl)
-	mockClient.EXPECT().
-		Get(gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(errNotFound)
-
-	reconciler := &controller.ServiceWatcherReconciler{
-		Client: mockClient,
-		Scheme: newTestScheme(),
+	c := errClient{
+		Client: fake.NewClientBuilder().WithScheme(testScheme(t)).Build(),
+		getErr: errors.New("get failed"),
 	}
+	reconciler := &controller.ServiceWatcherReconciler{Client: c}
 
 	_, err := reconciler.Reconcile(context.Background(), ctrl.Request{
-		NamespacedName: types.NamespacedName{
-			Name:      targetServiceName,
-			Namespace: targetServiceNamespace,
-		},
+		NamespacedName: types.NamespacedName{Name: targetServiceName, Namespace: targetServiceNamespace},
 	})
-
 	require.Error(t, err)
 }
 
 func TestServiceWatcherReconciler_UpdateError(t *testing.T) {
-	mockCtrl := gomock.NewController(t)
-
-	svc := &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:            targetServiceName,
-			Namespace:       targetServiceNamespace,
-			ResourceVersion: "1",
-		},
-		Spec: corev1.ServiceSpec{
-			Type: corev1.ServiceTypeClusterIP,
-		},
+	svc := clusterIPService(targetServiceName, targetServiceNamespace)
+	c := errClient{
+		Client:    fake.NewClientBuilder().WithScheme(testScheme(t)).WithObjects(svc).Build(),
+		updateErr: errors.New("update failed"),
 	}
-
-	errUpdate := errors.New("update failed")
-
-	mockClient := mocks.NewMockClient(mockCtrl)
-	mockClient.EXPECT().
-		Get(gomock.Any(), gomock.Any(), gomock.Any()).
-		DoAndReturn(func(_ context.Context, _ client.ObjectKey, obj client.Object, _ ...client.GetOption) error {
-			*obj.(*corev1.Service) = *svc
-			return nil
-		})
-	mockClient.EXPECT().
-		Update(gomock.Any(), gomock.Any()).
-		Return(errUpdate)
-
-	reconciler := &controller.ServiceWatcherReconciler{
-		Client: mockClient,
-		Scheme: newTestScheme(),
-	}
+	reconciler := &controller.ServiceWatcherReconciler{Client: c}
 
 	_, err := reconciler.Reconcile(context.Background(), ctrl.Request{
-		NamespacedName: types.NamespacedName{
-			Name:      targetServiceName,
-			Namespace: targetServiceNamespace,
-		},
+		NamespacedName: types.NamespacedName{Name: targetServiceName, Namespace: targetServiceNamespace},
 	})
-
 	require.Error(t, err)
 }
 
 func TestServiceWatcherReconciler_SkipsNonTarget(t *testing.T) {
-	mockCtrl := gomock.NewController(t)
-
-	svc := &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:            "other-service",
-			Namespace:       "kube-system",
-			ResourceVersion: "1",
-		},
-		Spec: corev1.ServiceSpec{
-			Type: corev1.ServiceTypeClusterIP,
-		},
-	}
-
-	mockClient := mocks.NewMockClient(mockCtrl)
-	mockClient.EXPECT().
-		Get(gomock.Any(), gomock.Any(), gomock.Any()).
-		DoAndReturn(func(_ context.Context, _ client.ObjectKey, obj client.Object, _ ...client.GetOption) error {
-			*obj.(*corev1.Service) = *svc
-			return nil
-		})
-	// No Update call expected; gomock will fail if Update is called.
-
-	reconciler := &controller.ServiceWatcherReconciler{
-		Client: mockClient,
-		Scheme: newTestScheme(),
-	}
+	svc := clusterIPService("other-service", "kube-system")
+	c := fake.NewClientBuilder().WithScheme(testScheme(t)).WithObjects(svc).Build()
+	reconciler := &controller.ServiceWatcherReconciler{Client: c}
 
 	_, err := reconciler.Reconcile(context.Background(), ctrl.Request{
-		NamespacedName: types.NamespacedName{
-			Name:      "other-service",
-			Namespace: "kube-system",
-		},
+		NamespacedName: types.NamespacedName{Name: "other-service", Namespace: "kube-system"},
 	})
-
 	require.NoError(t, err)
+
+	unchanged := &corev1.Service{}
+	require.NoError(t, c.Get(context.Background(), types.NamespacedName{
+		Name: "other-service", Namespace: "kube-system",
+	}, unchanged))
+	require.Equal(t, corev1.ServiceTypeClusterIP, unchanged.Spec.Type)
 }
 
 func TestServiceWatcherReconciler_SkipsAlreadyLoadBalancer(t *testing.T) {
-	mockCtrl := gomock.NewController(t)
-
-	svc := &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:            targetServiceName,
-			Namespace:       targetServiceNamespace,
-			ResourceVersion: "1",
-		},
-		Spec: corev1.ServiceSpec{
-			Type: corev1.ServiceTypeLoadBalancer,
-		},
-	}
-
-	mockClient := mocks.NewMockClient(mockCtrl)
-	mockClient.EXPECT().
-		Get(gomock.Any(), gomock.Any(), gomock.Any()).
-		DoAndReturn(func(_ context.Context, _ client.ObjectKey, obj client.Object, _ ...client.GetOption) error {
-			*obj.(*corev1.Service) = *svc
-			return nil
-		})
-	// No Update call expected.
-
-	reconciler := &controller.ServiceWatcherReconciler{
-		Client: mockClient,
-		Scheme: newTestScheme(),
-	}
+	svc := clusterIPService(targetServiceName, targetServiceNamespace)
+	svc.Spec.Type = corev1.ServiceTypeLoadBalancer
+	c := fake.NewClientBuilder().WithScheme(testScheme(t)).WithObjects(svc).Build()
+	reconciler := &controller.ServiceWatcherReconciler{Client: c}
 
 	_, err := reconciler.Reconcile(context.Background(), ctrl.Request{
-		NamespacedName: types.NamespacedName{
-			Name:      targetServiceName,
-			Namespace: targetServiceNamespace,
-		},
+		NamespacedName: types.NamespacedName{Name: targetServiceName, Namespace: targetServiceNamespace},
 	})
-
 	require.NoError(t, err)
 }

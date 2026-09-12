@@ -34,10 +34,6 @@ help:
 
 ##@ Development
 
-.PHONY: generate-mocks
-generate-mocks: mockgen ## Generate mock implementations for testing.
-	$(MOCKGEN) -destination=mocks/mock_client.go -package=mocks sigs.k8s.io/controller-runtime/pkg/client Client
-
 .PHONY: fmt
 fmt: ## Run go fmt against code.
 	go fmt ./...
@@ -47,11 +43,11 @@ vet: ## Run go vet against code.
 	go vet ./...
 
 .PHONY: test
-test: generate-mocks fmt vet lint-go ## Run tests.
+test: fmt vet lint-go ## Run tests.
 	go test -race -count=1 -coverprofile cover.out ./internal/...
 
 .PHONY: test-e2e
-test-e2e: generate-mocks fmt vet docker-build ## Run the e2e tests. Local runs recreate kind; CI expects an existing cluster.
+test-e2e: fmt vet docker-build ## Run the e2e tests. Local runs recreate kind; CI expects an existing cluster.
 	@command -v $(KIND) >/dev/null 2>&1 || { \
 		echo "Kind is not installed. Please install Kind manually."; \
 		exit 1; \
@@ -109,7 +105,7 @@ docker-build:
 docker-push: ## Push docker image with the manager.
 	$(DOCKER_ENV) $(CONTAINER_TOOL) push ${IMG}
 
-PLATFORMS ?= linux/arm64,linux/amd64,linux/s390x,linux/ppc64le
+PLATFORMS ?= linux/arm64,linux/amd64
 .PHONY: docker-buildx
 docker-buildx: ## Build and push docker image for the manager for cross-platform support
 	sed -e '1 s/\(^FROM\)/FROM --platform=\$$\{BUILDPLATFORM\}/; t' -e ' 1,// s//FROM --platform=\$$\{BUILDPLATFORM\}/' Dockerfile > Dockerfile.cross
@@ -138,7 +134,7 @@ clean:
 	@echo "Cleaning up..."
 	rm -rf .cache/ dist/ cover.out Dockerfile.cross
 	rm -rf bin/*/
-	rm -f bin/golangci-lint bin/golangci-lint-* bin/mockgen bin/mockgen-* bin/manager
+	rm -f bin/golangci-lint bin/golangci-lint-* bin/manager
 
 .PHONY: build-installer
 build-installer: ## Generate a consolidated YAML with the deployment.
@@ -169,11 +165,9 @@ $(TOOLBIN): $(LOCALBIN)
 KUBECTL ?= kubectl
 KIND ?= kind
 GOLANGCI_LINT ?= $(TOOLBIN)/golangci-lint
-MOCKGEN ?= $(TOOLBIN)/mockgen
 DOCKERFILES := $(shell find . -type f \( -name 'Dockerfile' -o -name '*.Dockerfile' \))
 
-GOLANGCI_LINT_VERSION ?= $(shell go list -m -f "{{ .Version }}" github.com/golangci/golangci-lint/v2)
-MOCKGEN_VERSION ?= $(shell go list -m -f "{{ .Version }}" go.uber.org/mock)
+GOLANGCI_LINT_VERSION ?= v2.13.2
 
 define go-install-tool
 @[ -f "$(1)-$(3)" ] || { \
@@ -191,11 +185,6 @@ endef
 golangci-lint: $(GOLANGCI_LINT) ## Download golangci-lint locally if necessary.
 $(GOLANGCI_LINT): $(TOOLBIN)
 	$(call go-install-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/v2/cmd/golangci-lint,$(GOLANGCI_LINT_VERSION))
-
-.PHONY: mockgen
-mockgen: $(MOCKGEN) ## Download mockgen locally if necessary.
-$(MOCKGEN): $(TOOLBIN)
-	$(call go-install-tool,$(MOCKGEN),go.uber.org/mock/mockgen,$(MOCKGEN_VERSION))
 
 .PHONY: lint-dockerfile
 lint-dockerfile: ## Run hadolint on Dockerfiles.
