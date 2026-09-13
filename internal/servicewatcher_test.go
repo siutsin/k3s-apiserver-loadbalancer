@@ -7,7 +7,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -51,11 +50,9 @@ func testScheme(t *testing.T) *runtime.Scheme {
 
 func clusterIPService(name, namespace string) *corev1.Service {
 	return &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:            name,
-			Namespace:       namespace,
-			ResourceVersion: "1",
-		},
+		Name:            name,
+		Namespace:       namespace,
+		ResourceVersion: "1",
 		Spec: corev1.ServiceSpec{
 			Type: corev1.ServiceTypeClusterIP,
 		},
@@ -68,7 +65,7 @@ func TestServiceWatcherReconciler_LoadBalancerUpdate(t *testing.T) {
 	reconciler := &k3s.ServiceWatcherReconciler{Client: c}
 
 	_, err := reconciler.Reconcile(context.Background(), ctrl.Request{
-		NamespacedName: types.NamespacedName{Name: targetServiceName, Namespace: targetServiceNamespace},
+		Name: targetServiceName, Namespace: targetServiceNamespace,
 	})
 	require.NoError(t, err)
 
@@ -87,7 +84,7 @@ func TestServiceWatcherReconciler_GetError(t *testing.T) {
 	reconciler := &k3s.ServiceWatcherReconciler{Client: c}
 
 	_, err := reconciler.Reconcile(context.Background(), ctrl.Request{
-		NamespacedName: types.NamespacedName{Name: targetServiceName, Namespace: targetServiceNamespace},
+		Name: targetServiceName, Namespace: targetServiceNamespace,
 	})
 	require.Error(t, err)
 }
@@ -101,7 +98,7 @@ func TestServiceWatcherReconciler_UpdateError(t *testing.T) {
 	reconciler := &k3s.ServiceWatcherReconciler{Client: c}
 
 	_, err := reconciler.Reconcile(context.Background(), ctrl.Request{
-		NamespacedName: types.NamespacedName{Name: targetServiceName, Namespace: targetServiceNamespace},
+		Name: targetServiceName, Namespace: targetServiceNamespace,
 	})
 	require.Error(t, err)
 }
@@ -112,7 +109,7 @@ func TestServiceWatcherReconciler_SkipsNonTarget(t *testing.T) {
 	reconciler := &k3s.ServiceWatcherReconciler{Client: c}
 
 	_, err := reconciler.Reconcile(context.Background(), ctrl.Request{
-		NamespacedName: types.NamespacedName{Name: "other-service", Namespace: "kube-system"},
+		Name: "other-service", Namespace: "kube-system",
 	})
 	require.NoError(t, err)
 
@@ -130,7 +127,7 @@ func TestServiceWatcherReconciler_SkipsAlreadyLoadBalancer(t *testing.T) {
 	reconciler := &k3s.ServiceWatcherReconciler{Client: c}
 
 	_, err := reconciler.Reconcile(context.Background(), ctrl.Request{
-		NamespacedName: types.NamespacedName{Name: targetServiceName, Namespace: targetServiceNamespace},
+		Name: targetServiceName, Namespace: targetServiceNamespace,
 	})
 	require.NoError(t, err)
 }
