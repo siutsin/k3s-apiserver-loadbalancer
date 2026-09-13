@@ -14,8 +14,10 @@ on:
       - '**/Dockerfile'
       - '**/*.Dockerfile'
       - '**/*.md'
+      - 'Makefile'
+      - 'PROJECT'
+      - 'config/**'
       - '.github/workflows/lint.yaml'
-      - 'versions.env'
 
 jobs:
   go:
@@ -52,23 +54,11 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Read hadolint version
-        id: hadolint-version
-        run: |
-          version="$(awk -F= '/^HADOLINT_VERSION=/{print $2}' versions.env)"
-          if [ -z "$version" ]; then
-            echo "Failed to read HADOLINT_VERSION from versions.env" >&2
-            exit 1
-          fi
-          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - name: Setup mise
+        uses: jdx/mise-action@c37c93293d6b742fc901e1406b8f764f6fb19dac # v2
 
       - name: Install hadolint
-        env:
-          HADOLINT_VERSION: ${{ steps.hadolint-version.outputs.version }}
-        run: |
-          curl -Lo /usr/local/bin/hadolint \
-            "https://github.com/hadolint/hadolint/releases/download/${HADOLINT_VERSION}/hadolint-Linux-x86_64"
-          chmod +x /usr/local/bin/hadolint
+        run: mise install hadolint
 
       - name: Run Dockerfile lint
         run: make lint-dockerfile

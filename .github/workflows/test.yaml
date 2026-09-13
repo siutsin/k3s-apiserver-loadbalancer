@@ -11,6 +11,9 @@ on:
       - '**/*.go'
       - 'go.mod'
       - 'go.sum'
+      - 'Makefile'
+      - 'PROJECT'
+      - 'config/**'
       - '.github/workflows/test.yaml'
 
 jobs:
