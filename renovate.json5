@@ -15,5 +15,9 @@
       matchPackageNames: ['dataaxiom/ghcr-cleanup-action'],
       abandonmentThreshold: null,
     },
+    {
+      matchPackageNames: ['anothrNick/github-tag-action'],
+      abandonmentThreshold: null, // Still works; no maintained fork to move to
+    },
   ],
 }

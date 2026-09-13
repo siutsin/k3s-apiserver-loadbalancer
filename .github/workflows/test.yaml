@@ -14,7 +14,10 @@ on:
       - 'Makefile'
       - 'PROJECT'
       - 'config/**'
-      - '.github/workflows/test.yaml'
+      - '.mise.toml'
+      - '**/Dockerfile'
+      - '**/*.md'
+      - '.github/workflows/**'
 
 jobs:
   test:
