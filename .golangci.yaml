@@ -1,59 +1,73 @@
 version: "2"
+
 run:
   allow-parallel-runners: true
+  relative-path-mode: gomod
+
 linters:
-  default: none
   enable:
-  - copyloopvar
-  - dupl
-  - errcheck
-  - errorlint
-  - exptostd
-  - goconst
-  - gocritic
-  - gocyclo
-  - gosec
-  - govet
-  - ineffassign
-  - lll
-  - misspell
-  - modernize
-  - nakedret
-  - nilerr
-  - perfsprint
-  - prealloc
-  - revive
-  - staticcheck
-  - testifylint
-  - unconvert
-  - unparam
-  - unused
-  - usetesting
+    - bodyclose # Detect leaked HTTP response bodies.
+    - durationcheck # Flag invalid duration arithmetic.
+    - errorlint # Enforce modern wrapped-error handling.
+    - gosec # Catch common security issues.
+    - misspell # Catch common spelling mistakes using UK English.
+    - modernize # Suggest modern stdlib constructs.
+    - nilerr # Catch returning nil with a non-nil error.
+    - noctx # Require context-aware APIs in non-test code paths.
+    - nolintlint # Keep nolint directives specific and justified.
+    - revive # Provide configurable, actively maintained style and correctness checks.
+    - testifylint # Catch misuse of testify assertions in tests.
+    - unconvert # Remove unnecessary type conversions.
+    - unparam # Find parameters that are never used by callees.
   settings:
+    errcheck:
+      check-blank: true
+      check-type-assertions: true
+    govet:
+      enable:
+        - nilness
+        - shadow
+    misspell:
+      locale: UK
+    nolintlint:
+      allow-unused: false
+      require-explanation: true
+      require-specific: true
     revive:
       rules:
-      - name: comment-spacings
+        - name: comment-spacings
+        - name: indent-error-flow
+        - name: unexported-return
+          disabled: true
+        - name: use-any
+    testifylint:
+      enable-all: true
   exclusions:
     generated: lax
     rules:
-    - linters:
-      - dupl
-      - lll
-      path: internal/*
-    - linters:
-      - gosec
-      path: e2e/*
+      - path: ^e2e/
+        linters:
+          - gosec
+          - noctx
+      - path: ^cmd/main\.go$
+        linters:
+          - misspell
     paths:
-    - third_party$
-    - builtin$
-    - examples$
+      - third_party$
+      - builtin$
+      - examples$
+
 formatters:
   enable:
-  - gofmt
-  - goimports
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/siutsin/k3s-apiserver-loadbalancer
   exclusions:
     generated: lax
     paths:
-    - third_party$
-    - builtin$
-    - examples$
+      - third_party$
+      - builtin$
+      - examples$

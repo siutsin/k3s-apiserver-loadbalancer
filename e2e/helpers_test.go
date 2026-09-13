@@ -11,7 +11,10 @@ import (
 
 // run executes the provided command within the project directory.
 func run(cmd *exec.Cmd) (string, error) {
-	dir, _ := getProjectDir()
+	dir, err := getProjectDir()
+	if err != nil {
+		return "", err
+	}
 	cmd.Dir = dir
 	cmd.Env = append(os.Environ(), "GO111MODULE=on")
 	command := strings.Join(cmd.Args, " ")
@@ -125,12 +128,18 @@ func loadImageViaArchive(name, cluster string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create temp file: %w", err)
 	}
-	defer func() { _ = os.Remove(archive.Name()) }()
-	_ = archive.Close()
+	defer func() {
+		if removeErr := os.Remove(archive.Name()); removeErr != nil && !os.IsNotExist(removeErr) {
+			fmt.Fprintln(os.Stderr, "warning: failed to remove temp file:", removeErr)
+		}
+	}()
+	if closeErr := archive.Close(); closeErr != nil {
+		return fmt.Errorf("failed to close temp file: %w", closeErr)
+	}
 
 	saveCmd := exec.Command("podman", "save", "-o", archive.Name(), name)
-	if _, err := run(saveCmd); err != nil {
-		return err
+	if _, saveErr := run(saveCmd); saveErr != nil {
+		return saveErr
 	}
 
 	loadCmd := exec.Command("kind", "load", "image-archive", archive.Name(), "--name", cluster)
