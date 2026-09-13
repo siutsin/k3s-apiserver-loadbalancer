@@ -52,7 +52,7 @@ func setup() error {
 	// rebuild when the tag already exists locally so there is a single build.
 	if !localImageExists(projectImage) {
 		fmt.Fprintln(os.Stderr, "building the manager image")
-		cmd := exec.Command("make", "docker-build", "IMG="+projectImage) //nolint:gosec
+		cmd := exec.Command("make", "docker-build", "IMG="+projectImage)
 		if _, err := run(cmd); err != nil {
 			return fmt.Errorf("failed to build image: %w", err)
 		}
@@ -100,7 +100,7 @@ func setup() error {
 	}
 
 	fmt.Fprintln(os.Stderr, "deploying the controller-manager")
-	cmd = exec.Command("make", "deploy", "IMG="+projectImage) //nolint:gosec
+	cmd = exec.Command("make", "deploy", "IMG="+projectImage)
 	if _, err := run(cmd); err != nil {
 		return fmt.Errorf("failed to deploy controller-manager: %w", err)
 	}
@@ -111,27 +111,33 @@ func setup() error {
 func teardown() {
 	fmt.Fprintln(os.Stderr, "cleaning up the curl pod for metrics")
 	cmd := exec.Command("kubectl", "delete", "pod", "curl-metrics", "-n", namespace)
-	_, _ = run(cmd)
+	if _, err := run(cmd); err != nil {
+		fmt.Fprintln(os.Stderr, "warning: failed to delete curl-metrics pod:", err)
+	}
 
 	fmt.Fprintln(os.Stderr, "undeploying the controller-manager")
 	cmd = exec.Command("make", "undeploy")
-	_, _ = run(cmd)
+	if _, err := run(cmd); err != nil {
+		fmt.Fprintln(os.Stderr, "warning: failed to undeploy controller-manager:", err)
+	}
 
 	fmt.Fprintln(os.Stderr, "removing manager namespace")
 	cmd = exec.Command("kubectl", "delete", "ns", namespace)
-	_, _ = run(cmd)
+	if _, err := run(cmd); err != nil {
+		fmt.Fprintln(os.Stderr, "warning: failed to delete namespace:", err)
+	}
 }
 
 // collectDebugInfo gathers logs, events, and pod descriptions for debugging failures.
 func collectDebugInfo(t *testing.T, controllerPodName string) {
 	t.Helper()
 	if controllerPodName != "" {
-		cmd := exec.Command("kubectl", "logs", controllerPodName, "-n", namespace) //nolint:gosec
+		cmd := exec.Command("kubectl", "logs", controllerPodName, "-n", namespace)
 		if logs, err := run(cmd); err == nil {
 			t.Logf("Controller logs:\n%s", logs)
 		}
 
-		cmd = exec.Command("kubectl", "describe", "pod", controllerPodName, "-n", namespace) //nolint:gosec
+		cmd = exec.Command("kubectl", "describe", "pod", controllerPodName, "-n", namespace)
 		if desc, err := run(cmd); err == nil {
 			t.Logf("Pod description:\n%s", desc)
 		}
@@ -183,7 +189,7 @@ func TestManager(t *testing.T) {
 				)
 			}
 
-			cmd = exec.Command("kubectl", "get", "pods", controllerPodName, //nolint:gosec
+			cmd = exec.Command("kubectl", "get", "pods", controllerPodName,
 				"-o", "jsonpath={.status.phase}", "-n", namespace)
 			phase, err := run(cmd)
 			if err != nil {
@@ -220,11 +226,11 @@ func TestManager(t *testing.T) {
 
 		t.Log("waiting for the metrics service to be ready")
 		err = poll(30*time.Second, func() error {
-			cmd := exec.Command("kubectl", "get", "service", metricsServiceName,
+			pollCmd := exec.Command("kubectl", "get", "service", metricsServiceName,
 				"-n", namespace, "-o", "jsonpath={.spec.clusterIP}")
-			output, err := run(cmd)
-			if err != nil {
-				return err
+			output, pollErr := run(pollCmd)
+			if pollErr != nil {
+				return pollErr
 			}
 			if output == "" {
 				return errors.New("metrics service has no cluster IP")
@@ -235,13 +241,13 @@ func TestManager(t *testing.T) {
 
 		t.Log("waiting for the metrics endpoint to be ready")
 		err = poll(30*time.Second, func() error {
-			cmd := exec.Command("kubectl", "get", "endpointslices.discovery.k8s.io",
+			pollCmd := exec.Command("kubectl", "get", "endpointslices.discovery.k8s.io",
 				"-l", "kubernetes.io/service-name="+metricsServiceName,
 				"-n", namespace,
 				"-o", "jsonpath={.items[0].ports[0].port}")
-			output, err := run(cmd)
-			if err != nil {
-				return err
+			output, pollErr := run(pollCmd)
+			if pollErr != nil {
+				return pollErr
 			}
 			if output != "8443" {
 				return fmt.Errorf("endpoint port is %q, want 8443", output)
@@ -252,10 +258,10 @@ func TestManager(t *testing.T) {
 
 		t.Log("verifying that the controller manager is serving the metrics server")
 		err = poll(30*time.Second, func() error {
-			cmd := exec.Command("kubectl", "logs", controllerPodName, "-n", namespace) //nolint:gosec
-			output, err := run(cmd)
-			if err != nil {
-				return err
+			pollCmd := exec.Command("kubectl", "logs", controllerPodName, "-n", namespace)
+			output, pollErr := run(pollCmd)
+			if pollErr != nil {
+				return pollErr
 			}
 			if !strings.Contains(output, "controller-runtime.metrics") ||
 				!strings.Contains(output, "Serving metrics server") {
@@ -267,11 +273,11 @@ func TestManager(t *testing.T) {
 
 		t.Log("waiting for the controller pod to be fully ready")
 		err = poll(30*time.Second, func() error {
-			cmd := exec.Command("kubectl", "get", "pod", controllerPodName, //nolint:gosec
+			pollCmd := exec.Command("kubectl", "get", "pod", controllerPodName,
 				"-n", namespace, "-o", "jsonpath={.status.containerStatuses[0].ready}")
-			output, err := run(cmd)
-			if err != nil {
-				return err
+			output, pollErr := run(pollCmd)
+			if pollErr != nil {
+				return pollErr
 			}
 			if output != "true" {
 				return fmt.Errorf("controller pod not ready: %q", output)
@@ -314,11 +320,11 @@ func TestManager(t *testing.T) {
 
 		t.Log("waiting for the curl-metrics pod to complete")
 		err = poll(30*time.Second, func() error {
-			cmd := exec.Command("kubectl", "get", "pods", "curl-metrics",
+			pollCmd := exec.Command("kubectl", "get", "pods", "curl-metrics",
 				"-o", "jsonpath={.status.phase}", "-n", namespace)
-			output, err := run(cmd)
-			if err != nil {
-				return err
+			output, pollErr := run(pollCmd)
+			if pollErr != nil {
+				return pollErr
 			}
 			if output != "Succeeded" {
 				return fmt.Errorf("curl pod phase is %q, want Succeeded", output)
@@ -334,11 +340,11 @@ func TestManager(t *testing.T) {
 
 		t.Log("verifying that the kubernetes service is now LoadBalancer type")
 		err = poll(30*time.Second, func() error {
-			cmd := exec.Command("kubectl", "get", "service", "kubernetes",
+			pollCmd := exec.Command("kubectl", "get", "service", "kubernetes",
 				"-n", "default", "-o", "jsonpath={.spec.type}")
-			output, err := run(cmd)
-			if err != nil {
-				return err
+			output, pollErr := run(pollCmd)
+			if pollErr != nil {
+				return pollErr
 			}
 			if output != "LoadBalancer" {
 				return fmt.Errorf("kubernetes service type is %q, want LoadBalancer", output)
@@ -370,14 +376,14 @@ func serviceAccountToken() (string, error) {
 			serviceAccountName,
 		), "-f", tokenRequestFile)
 
-		output, err := cmd.CombinedOutput()
-		if err != nil {
-			return fmt.Errorf("token request failed: %w", err)
+		output, cmdErr := cmd.CombinedOutput()
+		if cmdErr != nil {
+			return fmt.Errorf("token request failed: %w", cmdErr)
 		}
 
 		var token tokenRequest
-		if err := json.Unmarshal(output, &token); err != nil {
-			return fmt.Errorf("failed to parse token response: %w", err)
+		if unmarshalErr := json.Unmarshal(output, &token); unmarshalErr != nil {
+			return fmt.Errorf("failed to parse token response: %w", unmarshalErr)
 		}
 
 		out = token.Status.Token
