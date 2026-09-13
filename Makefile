@@ -1,6 +1,11 @@
 # Image URL to use all building/pushing image targets
 IMG ?= controller:latest
 
+# E2E_IMG is the operator image tag used by e2e tests.
+# The CI workflow prebuilds this tag with layer caching; TestMain skips
+# the build when the image already exists locally, so there is a single build.
+E2E_IMG ?= example.com/k3s-apiserver-loadbalancer:v0.0.1
+
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -57,7 +62,7 @@ test: manifests fmt vet lint-go ## Run tests.
 	go test -race -count=1 -coverprofile cover.out ./internal/...
 
 .PHONY: test-e2e
-test-e2e: fmt vet docker-build ## Run the e2e tests on kind. Local runs recreate kind; CI expects an existing cluster.
+test-e2e: fmt vet ## Run the e2e tests on kind. Local runs recreate kind; CI expects an existing cluster.
 	@command -v $(KIND) >/dev/null 2>&1 || { \
 		echo "Kind is not installed. Please install Kind manually."; \
 		exit 1; \
@@ -74,7 +79,21 @@ test-e2e: fmt vet docker-build ## Run the e2e tests on kind. Local runs recreate
 	fi
 	NO_PROXY=$${NO_PROXY:+$${NO_PROXY},}kind-control-plane \
 	no_proxy=$${no_proxy:+$${no_proxy},}kind-control-plane \
-	CONTAINER_TOOL=$(CONTAINER_TOOL) go test ./e2e/ -v
+	CONTAINER_TOOL=$(CONTAINER_TOOL) E2E_IMG=$(E2E_IMG) go test ./e2e/ -v
+
+.PHONY: test-e2e-ci
+test-e2e-ci: ## Run the e2e tests in CI. Lean: no fmt/vet (covered by lint job); workflow prebuilds E2E_IMG with cache.
+	@command -v $(KIND) >/dev/null 2>&1 || { \
+		echo "Kind is not installed. Please install Kind manually."; \
+		exit 1; \
+	}
+	@if [ -z "$(KIND_PROVIDER)" ]; then \
+		echo "E2E needs Docker or Podman to back kind. Apple Container builds images but cannot back kind clusters. Cover e2e in CI."; \
+		exit 1; \
+	fi
+	NO_PROXY=$${NO_PROXY:+$${NO_PROXY},}kind-control-plane \
+	no_proxy=$${no_proxy:+$${no_proxy},}kind-control-plane \
+	CONTAINER_TOOL=$(CONTAINER_TOOL) E2E_IMG=$(E2E_IMG) go test ./e2e/ -v
 
 APPLE_CLUSTER ?= e2e-apple
 APPLE_KUBECONFIG ?= $(CURDIR)/.kube-apple.yaml
@@ -90,7 +109,7 @@ test-e2e-apple: fmt vet ## Run the e2e tests on Apple Container (macOS only).
 	container k8s write-config --name $(APPLE_CLUSTER) --kubeconfig $(APPLE_KUBECONFIG)
 	kubectl config use-context $(APPLE_CLUSTER) --kubeconfig $(APPLE_KUBECONFIG)
 	CLUSTER_BACKEND=apple KIND_CLUSTER=$(APPLE_CLUSTER) KUBECONFIG=$(APPLE_KUBECONFIG) \
-	CONTAINER_TOOL=$(CONTAINER_TOOL) go test ./e2e/ -v
+	CONTAINER_TOOL=$(CONTAINER_TOOL) E2E_IMG=$(E2E_IMG) go test ./e2e/ -v
 
 ##@ Linting
 
