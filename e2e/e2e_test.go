@@ -19,9 +19,23 @@ const namespace = "k3s-apiserver-loadbalancer-system"
 const serviceAccountName = "k3s-apiserver-loadbalancer-controller-manager"
 const metricsServiceName = "k3s-apiserver-loadbalancer-controller-manager-metrics-service"
 const metricsRoleBindingName = "k3s-apiserver-loadbalancer-metrics-binding"
-const metricsProbeImage = "curlimages/curl:latest"
 
-var projectImage = "example.com/k3s-apiserver-loadbalancer:v0.0.1"
+// metricsProbeImage is pinned (not :latest) so kubelet uses IfNotPresent
+// instead of repulling on every run.
+const metricsProbeImage = "curlimages/curl:8.11.1"
+
+// projectImage is the operator image tag for e2e tests. It defaults to the
+// E2E_IMG Makefile value and can be overridden with the E2E_IMG environment
+// variable so CI, Make, and tests share a single tag.
+var projectImage = e2eImage()
+
+// e2eImage returns the operator image tag for e2e tests.
+func e2eImage() string {
+	if v, ok := os.LookupEnv("E2E_IMG"); ok && v != "" {
+		return v
+	}
+	return "example.com/k3s-apiserver-loadbalancer:v0.0.1"
+}
 
 func TestMain(m *testing.M) {
 	if err := setup(); err != nil {
@@ -34,10 +48,16 @@ func TestMain(m *testing.M) {
 }
 
 func setup() error {
-	fmt.Fprintln(os.Stderr, "building the manager image")
-	cmd := exec.Command("make", "docker-build", "IMG="+projectImage) //nolint:gosec
-	if _, err := run(cmd); err != nil {
-		return fmt.Errorf("failed to build image: %w", err)
+	// The CI workflow prebuilds projectImage with layer caching; skip the
+	// rebuild when the tag already exists locally so there is a single build.
+	if !localImageExists(projectImage) {
+		fmt.Fprintln(os.Stderr, "building the manager image")
+		cmd := exec.Command("make", "docker-build", "IMG="+projectImage) //nolint:gosec
+		if _, err := run(cmd); err != nil {
+			return fmt.Errorf("failed to build image: %w", err)
+		}
+	} else {
+		fmt.Fprintln(os.Stderr, "reusing the existing manager image")
 	}
 
 	fmt.Fprintln(os.Stderr, "loading the manager image on kind")
@@ -56,7 +76,7 @@ func setup() error {
 	}
 
 	fmt.Fprintln(os.Stderr, "creating manager namespace")
-	cmd = exec.Command("kubectl", "create", "ns", namespace)
+	cmd := exec.Command("kubectl", "create", "ns", namespace)
 	if _, err := run(cmd); err != nil {
 		return fmt.Errorf("failed to create namespace: %w", err)
 	}

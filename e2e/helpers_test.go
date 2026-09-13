@@ -138,6 +138,24 @@ func loadImageViaArchive(name, cluster string) error {
 	return err
 }
 
+// localImageExists reports whether the image tag exists in the active
+// container runtime, mirroring the Makefile CONTAINER_TOOL priority.
+func localImageExists(name string) bool {
+	tools := []string{}
+	if v, ok := os.LookupEnv("CONTAINER_TOOL"); ok && v != "" {
+		tools = append(tools, v)
+	} else if tool := containerTool(); tool != "" {
+		tools = append(tools, tool)
+	}
+	for _, tool := range tools {
+		cmd := exec.Command(tool, "image", "inspect", name)
+		if _, err := run(cmd); err == nil {
+			return true
+		}
+	}
+	return false
+}
+
 // getNonEmptyLines splits command output by newlines and returns non-empty lines.
 func getNonEmptyLines(output string) []string {
 	var res []string
