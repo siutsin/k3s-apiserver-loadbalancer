@@ -3,7 +3,7 @@ module github.com/siutsin/k3s-apiserver-loadbalancer
 go 1.27
 
 require (
-	github.com/go-logr/logr v1.4.3
+	github.com/go-logr/logr v1.4.4
 	github.com/stretchr/testify v1.12.1
 	k8s.io/api v0.37.0
 	k8s.io/apimachinery v0.37.0
