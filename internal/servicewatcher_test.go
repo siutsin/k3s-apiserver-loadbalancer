@@ -1,4 +1,4 @@
-package controller_test
+package k3s_test
 
 import (
 	"context"
@@ -14,7 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	"github.com/siutsin/k3s-apiserver-loadbalancer/internal/controller"
+	k3s "github.com/siutsin/k3s-apiserver-loadbalancer/internal"
 )
 
 const (
@@ -65,7 +65,7 @@ func clusterIPService(name, namespace string) *corev1.Service {
 func TestServiceWatcherReconciler_LoadBalancerUpdate(t *testing.T) {
 	svc := clusterIPService(targetServiceName, targetServiceNamespace)
 	c := fake.NewClientBuilder().WithScheme(testScheme(t)).WithObjects(svc).Build()
-	reconciler := &controller.ServiceWatcherReconciler{Client: c}
+	reconciler := &k3s.ServiceWatcherReconciler{Client: c}
 
 	_, err := reconciler.Reconcile(context.Background(), ctrl.Request{
 		NamespacedName: types.NamespacedName{Name: targetServiceName, Namespace: targetServiceNamespace},
@@ -84,7 +84,7 @@ func TestServiceWatcherReconciler_GetError(t *testing.T) {
 		Client: fake.NewClientBuilder().WithScheme(testScheme(t)).Build(),
 		getErr: errors.New("get failed"),
 	}
-	reconciler := &controller.ServiceWatcherReconciler{Client: c}
+	reconciler := &k3s.ServiceWatcherReconciler{Client: c}
 
 	_, err := reconciler.Reconcile(context.Background(), ctrl.Request{
 		NamespacedName: types.NamespacedName{Name: targetServiceName, Namespace: targetServiceNamespace},
@@ -98,7 +98,7 @@ func TestServiceWatcherReconciler_UpdateError(t *testing.T) {
 		Client:    fake.NewClientBuilder().WithScheme(testScheme(t)).WithObjects(svc).Build(),
 		updateErr: errors.New("update failed"),
 	}
-	reconciler := &controller.ServiceWatcherReconciler{Client: c}
+	reconciler := &k3s.ServiceWatcherReconciler{Client: c}
 
 	_, err := reconciler.Reconcile(context.Background(), ctrl.Request{
 		NamespacedName: types.NamespacedName{Name: targetServiceName, Namespace: targetServiceNamespace},
@@ -109,7 +109,7 @@ func TestServiceWatcherReconciler_UpdateError(t *testing.T) {
 func TestServiceWatcherReconciler_SkipsNonTarget(t *testing.T) {
 	svc := clusterIPService("other-service", "kube-system")
 	c := fake.NewClientBuilder().WithScheme(testScheme(t)).WithObjects(svc).Build()
-	reconciler := &controller.ServiceWatcherReconciler{Client: c}
+	reconciler := &k3s.ServiceWatcherReconciler{Client: c}
 
 	_, err := reconciler.Reconcile(context.Background(), ctrl.Request{
 		NamespacedName: types.NamespacedName{Name: "other-service", Namespace: "kube-system"},
@@ -127,7 +127,7 @@ func TestServiceWatcherReconciler_SkipsAlreadyLoadBalancer(t *testing.T) {
 	svc := clusterIPService(targetServiceName, targetServiceNamespace)
 	svc.Spec.Type = corev1.ServiceTypeLoadBalancer
 	c := fake.NewClientBuilder().WithScheme(testScheme(t)).WithObjects(svc).Build()
-	reconciler := &controller.ServiceWatcherReconciler{Client: c}
+	reconciler := &k3s.ServiceWatcherReconciler{Client: c}
 
 	_, err := reconciler.Reconcile(context.Background(), ctrl.Request{
 		NamespacedName: types.NamespacedName{Name: targetServiceName, Namespace: targetServiceNamespace},

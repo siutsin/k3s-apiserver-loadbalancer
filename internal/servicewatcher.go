@@ -1,4 +1,4 @@
-package controller
+package k3s
 
 import (
 	"context"
