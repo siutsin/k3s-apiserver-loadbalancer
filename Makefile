@@ -2,7 +2,7 @@
 IMG ?= controller:latest
 
 # E2E_IMG is the operator image tag used by e2e tests.
-# The CI workflow prebuilds this tag with layer caching; TestMain skips
+# The CI workflow prebuilds this tag; TestMain skips
 # the build when the image already exists locally, so there is a single build.
 E2E_IMG ?= example.com/k3s-apiserver-loadbalancer:v0.0.1
 
