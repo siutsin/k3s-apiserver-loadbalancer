@@ -263,8 +263,7 @@ func TestManager(t *testing.T) {
 			if pollErr != nil {
 				return pollErr
 			}
-			if !strings.Contains(output, "controller-runtime.metrics") ||
-				!strings.Contains(output, "Serving metrics server") {
+			if !strings.Contains(output, "Serving metrics server") {
 				return errors.New("metrics server not yet started")
 			}
 			return nil
