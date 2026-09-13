@@ -10,9 +10,6 @@
   },
   minimumReleaseAge: '7 days',
   rebaseWhen: 'behind-base-branch',
-  ignorePaths: [
-    'config/manager/kustomization.yaml',
-  ],
   packageRules: [
     {
       matchPackageNames: ['dataaxiom/ghcr-cleanup-action'],

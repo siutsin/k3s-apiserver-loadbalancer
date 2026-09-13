@@ -72,5 +72,5 @@ make undeploy
    Users can run `kubectl apply` with the published YAML bundle to install the project:
 
     ```sh
-    kubectl apply -f https://raw.githubusercontent.com/siutsin/otaru/master/applications/k3s-apiserver-loadbalancer/dist/install.yaml
+    kubectl apply -f https://github.com/siutsin/k3s-apiserver-loadbalancer/releases/latest/download/install.yaml
     ```

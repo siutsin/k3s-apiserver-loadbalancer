@@ -14,7 +14,7 @@ type ServiceWatcherReconciler struct {
 	client.Client
 }
 
-// +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;update;patch
+// +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;update;patch
 
 func (r *ServiceWatcherReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := logf.FromContext(ctx).WithValues("namespace", req.Namespace, "name", req.Name)

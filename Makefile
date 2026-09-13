@@ -8,7 +8,13 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
-CONTAINER_TOOL ?= docker
+# CONTAINER_TOOL defines the container tool to be used for building images.
+# Auto-detects docker or podman, preferring docker if both are available.
+# Can be overridden by setting CONTAINER_TOOL environment variable.
+CONTAINER_TOOL ?= $(shell command -v docker >/dev/null 2>&1 && echo docker || (command -v podman >/dev/null 2>&1 && echo podman || (command -v container >/dev/null 2>&1 && echo container || echo docker)))
+# KIND_PROVIDER detects the provider backing kind clusters.
+# Apple Container builds images but cannot back kind, so e2e targets require Docker or Podman.
+KIND_PROVIDER ?= $(shell command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1 && echo docker || (command -v podman >/dev/null 2>&1 && echo podman || echo ""))
 GOCACHE ?= $(CURDIR)/.cache/go-build
 GOLANGCI_LINT_CACHE ?= $(CURDIR)/.cache/golangci-lint
 export GOCACHE
@@ -34,6 +40,10 @@ help:
 
 ##@ Development
 
+.PHONY: manifests
+manifests: controller-gen ## Generate RBAC manifests from Kubebuilder markers.
+	GOWORK=off "$(CONTROLLER_GEN)" rbac:roleName=manager-role paths="./cmd/..." paths="./internal/..." output:rbac:artifacts:config=config/rbac
+
 .PHONY: fmt
 fmt: ## Run go fmt against code.
 	go fmt ./...
@@ -43,31 +53,43 @@ vet: ## Run go vet against code.
 	go vet ./...
 
 .PHONY: test
-test: fmt vet lint-go ## Run tests.
+test: manifests fmt vet lint-go ## Run tests.
 	go test -race -count=1 -coverprofile cover.out ./internal/...
 
 .PHONY: test-e2e
-test-e2e: fmt vet docker-build ## Run the e2e tests. Local runs recreate kind; CI expects an existing cluster.
+test-e2e: fmt vet docker-build ## Run the e2e tests on kind. Local runs recreate kind; CI expects an existing cluster.
 	@command -v $(KIND) >/dev/null 2>&1 || { \
 		echo "Kind is not installed. Please install Kind manually."; \
 		exit 1; \
 	}
+	@if [ -z "$(KIND_PROVIDER)" ]; then \
+		echo "E2E needs Docker or Podman to back kind. Apple Container builds images but cannot back kind clusters. Cover e2e in CI."; \
+		exit 1; \
+	fi
 	@if [ "$${GITHUB_ACTIONS:-}" != "true" ]; then \
 		$(DOCKER_ENV) kind delete cluster --name kind; \
 		$(DOCKER_ENV) kind create cluster --name kind --config e2e/kind-config.yaml; \
 		mkdir -p "$$HOME/.kube"; \
-		if [ -f /.dockerenv ]; then \
-			current_network=$$($(DOCKER_ENV) docker inspect "$$HOSTNAME" --format '{{range $$name, $$network := .NetworkSettings.Networks}}{{println $$name}}{{end}}' | head -n1); \
-			$(DOCKER_ENV) docker network connect "$$current_network" kind-control-plane; \
-			$(DOCKER_ENV) $(KIND) get kubeconfig --name kind | \
-				sed 's|server: https://127.0.0.1:[0-9][0-9]*|server: https://kind-control-plane:6443|' \
-				> "$$HOME/.kube/config"; \
-		else \
-			$(DOCKER_ENV) $(KIND) get kubeconfig --name kind > "$$HOME/.kube/config"; \
-		fi; \
+		$(DOCKER_ENV) $(KIND) get kubeconfig --name kind > "$$HOME/.kube/config"; \
 	fi
 	NO_PROXY=$${NO_PROXY:+$${NO_PROXY},}kind-control-plane \
 	no_proxy=$${no_proxy:+$${no_proxy},}kind-control-plane \
+	CONTAINER_TOOL=$(CONTAINER_TOOL) go test ./e2e/ -v
+
+APPLE_CLUSTER ?= e2e-apple
+APPLE_KUBECONFIG ?= $(CURDIR)/.kube-apple.yaml
+
+.PHONY: test-e2e-apple
+test-e2e-apple: fmt vet ## Run the e2e tests on Apple Container (macOS only).
+	@command -v container >/dev/null 2>&1 || { \
+		echo "Apple Container CLI is not installed."; \
+		exit 1; \
+	}
+	container k8s delete --name $(APPLE_CLUSTER) || true
+	container k8s create --name $(APPLE_CLUSTER)
+	container k8s write-config --name $(APPLE_CLUSTER) --kubeconfig $(APPLE_KUBECONFIG)
+	kubectl config use-context $(APPLE_CLUSTER) --kubeconfig $(APPLE_KUBECONFIG)
+	CLUSTER_BACKEND=apple KIND_CLUSTER=$(APPLE_CLUSTER) KUBECONFIG=$(APPLE_KUBECONFIG) \
 	CONTAINER_TOOL=$(CONTAINER_TOOL) go test ./e2e/ -v
 
 ##@ Linting
@@ -90,11 +112,11 @@ lint-go-config: golangci-lint ## Verify golangci-lint configuration
 ##@ Build
 
 .PHONY: build
-build: fmt vet ## Build manager binary.
+build: manifests fmt vet ## Build manager binary.
 	go build -o bin/manager cmd/main.go
 
 .PHONY: run
-run: fmt vet ## Run a controller from your host.
+run: manifests fmt vet ## Run a controller from your host.
 	go run ./cmd/main.go
 
 .PHONY: docker-build
@@ -106,13 +128,14 @@ docker-push: ## Push docker image with the manager.
 	$(DOCKER_ENV) $(CONTAINER_TOOL) push ${IMG}
 
 PLATFORMS ?= linux/arm64,linux/amd64
+BUILDX_BUILDER ?= operator-builder
 .PHONY: docker-buildx
 docker-buildx: ## Build and push docker image for the manager for cross-platform support
 	sed -e '1 s/\(^FROM\)/FROM --platform=\$$\{BUILDPLATFORM\}/; t' -e ' 1,// s//FROM --platform=\$$\{BUILDPLATFORM\}/' Dockerfile > Dockerfile.cross
-	- $(DOCKER_ENV) $(CONTAINER_TOOL) buildx create --name k3s-apiserver-loadbalancer-builder
-	$(DOCKER_ENV) $(CONTAINER_TOOL) buildx use k3s-apiserver-loadbalancer-builder
+	- $(DOCKER_ENV) $(CONTAINER_TOOL) buildx create --name $(BUILDX_BUILDER)
+	$(DOCKER_ENV) $(CONTAINER_TOOL) buildx use $(BUILDX_BUILDER)
 	- $(DOCKER_ENV) $(CONTAINER_TOOL) buildx build --push --platform=$(PLATFORMS) --tag ${IMG} -f Dockerfile.cross .
-	- $(DOCKER_ENV) $(CONTAINER_TOOL) buildx rm k3s-apiserver-loadbalancer-builder
+	- $(DOCKER_ENV) $(CONTAINER_TOOL) buildx rm $(BUILDX_BUILDER)
 	rm Dockerfile.cross
 
 IGNORE_NOT_FOUND ?= false
@@ -124,9 +147,9 @@ case "$$last_segment" in \
   *:*) version="$${last_segment##*:}" ;; \
   *) version="latest" ;; \
 esac; \
-sed -e 's|image: controller:latest|image: ${IMG}|' \
-    -e "s|app.kubernetes.io/version: __APP_VERSION__|app.kubernetes.io/version: $$version|g" \
-    deploy/install-template.yaml
+"$(KUSTOMIZE)" build config/default | \
+  sed -e 's|image: controller:latest|image: ${IMG}|' \
+      -e "s|app.kubernetes.io/version: __APP_VERSION__|app.kubernetes.io/version: $$version|g"
 endef
 
 .PHONY: clean
@@ -137,19 +160,19 @@ clean:
 	rm -f bin/golangci-lint bin/golangci-lint-* bin/manager
 
 .PHONY: build-installer
-build-installer: ## Generate a consolidated YAML with the deployment.
+build-installer: manifests kustomize ## Generate a consolidated YAML with the deployment.
 	mkdir -p dist
 	@$(render-install-yaml) > dist/install.yaml
 
 ##@ Deployment
 
 .PHONY: deploy
-deploy: ## Deploy controller to the K8s cluster specified in ~/.kube/config.
+deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
 	@$(render-install-yaml) | $(KUBECTL) apply -f -
 
 .PHONY: undeploy
-undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
-	$(KUBECTL) delete --ignore-not-found=$(IGNORE_NOT_FOUND) -f deploy/install-template.yaml
+undeploy: kustomize ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
+	@$(render-install-yaml) | $(KUBECTL) delete --ignore-not-found=$(IGNORE_NOT_FOUND) -f -
 
 ##@ Dependencies
 
@@ -164,10 +187,24 @@ $(TOOLBIN): $(LOCALBIN)
 
 KUBECTL ?= kubectl
 KIND ?= kind
+KUSTOMIZE ?= $(TOOLBIN)/kustomize
+CONTROLLER_GEN ?= $(TOOLBIN)/controller-gen
 GOLANGCI_LINT ?= $(TOOLBIN)/golangci-lint
 DOCKERFILES := $(shell find . -type f \( -name 'Dockerfile' -o -name '*.Dockerfile' \))
 
+KUSTOMIZE_VERSION ?= v5.8.1
+CONTROLLER_TOOLS_VERSION ?= v0.22.0
 GOLANGCI_LINT_VERSION ?= v2.13.2
+
+.PHONY: kustomize
+kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary.
+$(KUSTOMIZE): $(TOOLBIN)
+	$(call go-install-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v5,$(KUSTOMIZE_VERSION))
+
+.PHONY: controller-gen
+controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.
+$(CONTROLLER_GEN): $(TOOLBIN)
+	$(call go-install-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen,$(CONTROLLER_TOOLS_VERSION))
 
 define go-install-tool
 @[ -f "$(1)-$(3)" ] || { \
