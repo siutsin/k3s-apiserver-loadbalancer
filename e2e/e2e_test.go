@@ -257,7 +257,8 @@ func TestManager(t *testing.T) {
 			if err != nil {
 				return err
 			}
-			if !strings.Contains(output, "controller-runtime.metrics\tServing metrics server") {
+			if !strings.Contains(output, "controller-runtime.metrics") ||
+				!strings.Contains(output, "Serving metrics server") {
 				return errors.New("metrics server not yet started")
 			}
 			return nil
