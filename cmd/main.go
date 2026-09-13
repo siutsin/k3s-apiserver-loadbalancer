@@ -13,7 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	"github.com/siutsin/k3s-apiserver-loadbalancer/internal/controller"
+	k3s "github.com/siutsin/k3s-apiserver-loadbalancer/internal"
 )
 
 var (
@@ -70,7 +70,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controller.ServiceWatcherReconciler{
+	if err = (&k3s.ServiceWatcherReconciler{
 		Client: mgr.GetClient(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Service")
