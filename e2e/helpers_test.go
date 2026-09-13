@@ -103,14 +103,12 @@ func containerTool() string {
 // The node name matches the cluster name for single-node clusters.
 func appleImageTag(cluster, name string) error {
 	nodeName, kubeName := name, name
-	if i := strings.Index(name, "/"); i < 0 {
+	host, _, found := strings.Cut(name, "/")
+	if !found {
 		kubeName = "docker.io/library/" + name
-	} else {
-		host := name[:i]
-		if !strings.Contains(host, ".") && !strings.Contains(host, ":") && host != "localhost" {
-			nodeName = "docker.io/" + name
-			kubeName = nodeName
-		}
+	} else if !strings.Contains(host, ".") && !strings.Contains(host, ":") && host != "localhost" {
+		nodeName = "docker.io/" + name
+		kubeName = nodeName
 	}
 	if nodeName == kubeName {
 		return nil
