@@ -27,32 +27,6 @@ external access to the `LoadBalancer` service.
 - kubectl v1.33.1+
 - Access to a Kubernetes v1.33.1+ cluster
 
-### Development container
-
-A preconfigured [devcontainer](.devcontainer/) is provided for a consistent
-development environment with all tools pre-installed.
-
-This setup currently targets Docker Desktop. It mounts the host Docker socket
-and Claude login state into the container and routes outbound HTTP and HTTPS
-traffic through a restricted proxy sidecar.
-
-```sh
-devcontainer up --workspace-folder .
-devcontainer exec --workspace-folder . claude --dangerously-skip-permissions
-```
-
-To rebuild the container after configuration changes:
-
-```sh
-devcontainer up --workspace-folder . --remove-existing-container --build-no-cache
-```
-
-See [`.devcontainer/README.md`](.devcontainer/README.md)
-for the detailed setup, network model, and allowlist.
-
-See the [Claude Code devcontainer documentation](https://code.claude.com/docs/en/devcontainer)
-for Claude-specific workflow details.
-
 ### Deploy on the cluster
 
 **Build and push your image to the location specified by `IMG`:**
@@ -98,5 +72,5 @@ make undeploy
    Users can run `kubectl apply` with the published YAML bundle to install the project:
 
     ```sh
-    kubectl apply -f https://raw.githubusercontent.com/siutsin/otaru/master/applications/k3s-apiserver-loadbalancer/dist/install.yaml
+    kubectl apply -f https://github.com/siutsin/k3s-apiserver-loadbalancer/releases/latest/download/install.yaml
     ```

@@ -8,9 +8,12 @@ on:
     branches:
       - master
     paths:
-      - '**.go'
+      - '**/*.go'
       - 'go.mod'
       - 'go.sum'
+      - 'Makefile'
+      - 'PROJECT'
+      - 'config/**'
 
 jobs:
   test-e2e:
@@ -30,11 +33,11 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Install the latest version of kind
-        run: |
-          curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64
-          chmod +x ./kind
-          sudo mv ./kind /usr/local/bin/kind
+      - name: Setup mise
+        uses: jdx/mise-action@c37c93293d6b742fc901e1406b8f764f6fb19dac # v2
+
+      - name: Install kind
+        run: mise install kind
 
       - name: Verify kind installation
         run: kind version

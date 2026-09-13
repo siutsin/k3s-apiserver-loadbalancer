@@ -44,10 +44,19 @@ func poll(timeout time.Duration, fn func() error) error {
 // loadImageToKindCluster loads a local container image to the kind cluster.
 // It detects the container tool in use and falls back to "podman save | kind load image-archive"
 // when podman is the provider, since "kind load docker-image" requires a rootful podman machine.
+// With CLUSTER_BACKEND=apple it loads into the Apple Container k8s cluster instead.
 func loadImageToKindCluster(name string) error {
 	cluster := "kind"
 	if v, ok := os.LookupEnv("KIND_CLUSTER"); ok {
 		cluster = v
+	}
+
+	if os.Getenv("CLUSTER_BACKEND") == "apple" {
+		cmd := exec.Command("container", "k8s", "load-image", "--name", cluster, name)
+		if _, err := run(cmd); err != nil {
+			return err
+		}
+		return appleImageTag(cluster, name)
 	}
 
 	containerTool := containerTool()
@@ -63,6 +72,11 @@ func loadImageToKindCluster(name string) error {
 
 // pullImage pulls a container image with the active container tool.
 func pullImage(name string) error {
+	if os.Getenv("CLUSTER_BACKEND") == "apple" {
+		cmd := exec.Command("container", "image", "pull", name)
+		_, err := run(cmd)
+		return err
+	}
 	cmd := exec.Command(containerTool(), "pull", name)
 	_, err := run(cmd)
 	return err
@@ -80,6 +94,29 @@ func containerTool() string {
 	}
 
 	return "podman"
+}
+
+// appleImageTag aligns the in-node image reference with the name kubelet
+// looks up, so pods start without a registry. load-image stores single-name
+// images short and prefixes multi-part names with docker.io, while kubelet
+// wants docker.io/library for single names and docker.io for multi-part ones.
+// The node name matches the cluster name for single-node clusters.
+func appleImageTag(cluster, name string) error {
+	nodeName, kubeName := name, name
+	host, _, found := strings.Cut(name, "/")
+	if !found {
+		kubeName = "docker.io/library/" + name
+	} else if !strings.Contains(host, ".") && !strings.Contains(host, ":") && host != "localhost" {
+		nodeName = "docker.io/" + name
+		kubeName = nodeName
+	}
+	if nodeName == kubeName {
+		return nil
+	}
+	cmd := exec.Command("container", "exec", cluster,
+		"ctr", "-n", "k8s.io", "images", "tag", nodeName, kubeName)
+	_, err := run(cmd)
+	return err
 }
 
 // loadImageViaArchive saves the image to a temporary archive and loads it into kind.
