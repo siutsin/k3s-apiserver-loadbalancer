@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+  workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
@@ -24,7 +25,8 @@ jobs:
         id: release
         uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5
         with:
-          release-type: go
+          config-file: release-please-config.json
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
 
       - name: Clone the code
         if: ${{ steps.release.outputs.release_created }}
