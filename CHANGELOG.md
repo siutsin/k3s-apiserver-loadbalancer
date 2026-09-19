@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.293.2](https://github.com/siutsin/k3s-apiserver-loadbalancer/compare/v1.293.1...v1.293.2) (2026-09-19)
+
+
+### Bug Fixes
+
+* create releases with PAT workflows write ([#546](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/546)) ([87ce041](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/87ce0410938e0aeced2a95c7a0d145726381f842))
+* drop deployment environment from release job ([#545](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/545)) ([3fa2936](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/3fa2936c5d9a999ff09faae3934863696f69b120))
+* use workflow token for releases ([#544](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/544)) ([c569de2](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/c569de204f8dabfbe259019427705f2685108121))
+
 ## [1.293.1](https://github.com/siutsin/k3s-apiserver-loadbalancer/compare/v1.293.0...v1.293.1) (2026-09-19)
 
 
