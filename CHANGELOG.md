@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.293.3](https://github.com/siutsin/k3s-apiserver-loadbalancer/compare/v1.293.2...v1.293.3) (2026-09-20)
+
+
+### Bug Fixes
+
+* **deps:** bump OpenTelemetry to v1.46.0 and refresh stale action pins ([#550](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/550)) ([192386a](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/192386a53ea9397217eedba7f5a7b87c36525897))
+
 ## [1.293.2](https://github.com/siutsin/k3s-apiserver-loadbalancer/compare/v1.293.1...v1.293.2) (2026-09-19)
 
 
