@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.293.4](https://github.com/siutsin/k3s-apiserver-loadbalancer/compare/v1.293.3...v1.293.4) (2026-09-21)
+
+
+### Bug Fixes
+
+* **deps:** update module sigs.k8s.io/controller-runtime to v0.25.1 ([#552](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/552)) ([546f8f9](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/546f8f9e9a211f488de51f79bfe82e50d85854c7))
+
 ## [1.293.3](https://github.com/siutsin/k3s-apiserver-loadbalancer/compare/v1.293.2...v1.293.3) (2026-09-20)
 
 
