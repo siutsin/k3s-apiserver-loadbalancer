@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.293.6](https://github.com/siutsin/k3s-apiserver-loadbalancer/compare/v1.293.5...v1.293.6) (2026-10-03)
+
+
+### Bug Fixes
+
+* **deps:** update kubernetes monorepo to v0.37.1 ([#568](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/568)) ([646644e](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/646644e7be24c188c92c0ad9a296e7ad43130362))
+
+
+### Miscellaneous
+
+* **deps:** update dependency golangci-lint to v2.14.0 ([#570](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/570)) ([83e67e8](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/83e67e8ffba857807fcac7dc81fe0faa2f1afbdd))
+* **deps:** update dependency kubectl to v1.37.1 ([#564](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/564)) ([24d84d7](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/24d84d70a716fa3626c2ee5a952763b3656af19f))
+* point review bot at AGENTS.md ([#574](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/574)) ([bb3beba](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/bb3bebafe228fd5f5acdd69853b82a9cdc4cb9d1))
+* remove CLAUDE.md alias ([#573](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/573)) ([271a395](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/271a3950e46173a1aaec9c376c20274565a117d9))
+
 ## [1.293.5](https://github.com/siutsin/k3s-apiserver-loadbalancer/compare/v1.293.4...v1.293.5) (2026-09-26)
 
 
