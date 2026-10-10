@@ -213,7 +213,7 @@ DOCKERFILES := $(shell find . -type f \( -name 'Dockerfile' -o -name '*.Dockerfi
 
 KUSTOMIZE_VERSION ?= v5.8.1
 CONTROLLER_TOOLS_VERSION ?= v0.22.0
-GOLANGCI_LINT_VERSION ?= v2.13.2
+GOLANGCI_LINT_VERSION ?= v2.14.0
 
 .PHONY: kustomize
 kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary.
