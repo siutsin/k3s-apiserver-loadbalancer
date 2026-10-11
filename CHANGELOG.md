@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.293.7](https://github.com/siutsin/k3s-apiserver-loadbalancer/compare/v1.293.6...v1.293.7) (2026-10-11)
+
+
+### Bug Fixes
+
+* **deps:** update module sigs.k8s.io/controller-runtime to v0.25.2 ([#582](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/582)) ([ec67227](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/ec672270e31471cfed36f940dbd1602f13ea3cd3))
+* sync codeql-action hash pins to v4 tag ([#583](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/583)) ([c57a845](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/c57a845310b625b881c0288cdf8de64ac1d8ed44))
+
+
+### Miscellaneous
+
+* **deps:** update dependency kustomize to v5.8.2 ([#578](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/578)) ([2917d80](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/2917d80946a0cad1ed6f7e98c0942fb6eec94d8a))
+* update jdx/mise-action pin to current v5 commit ([#586](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/586)) ([65514cb](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/65514cb99f2bf5c5c0a9025071899d22d52e3cee))
+
 ## [1.293.6](https://github.com/siutsin/k3s-apiserver-loadbalancer/compare/v1.293.5...v1.293.6) (2026-10-03)
 
 
