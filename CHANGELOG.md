@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.293.8](https://github.com/siutsin/k3s-apiserver-loadbalancer/compare/v1.293.7...v1.293.8) (2026-10-17)
+
+
+### Bug Fixes
+
+* **ci:** update mise action pin to current v5 commit ([#594](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/594)) ([068a639](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/068a63984881b77fc9abc41c00bff56a148fdd3c))
+* **ci:** use exact version comments on action pins ([#601](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/601)) ([f8c5466](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/f8c5466c65ee51e3a188858eb5487a82280773f1))
+
+
+### Miscellaneous
+
+* **deps:** update dependency go to v1.27.2 ([#598](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/598)) ([bb351da](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/bb351da681d1bdba9d3bdcd5442c074ec043cd38))
+* **deps:** update dependency kustomize to v5.8.3 ([#597](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/597)) ([b76f138](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/b76f138283f615d1451c7d44b565f26d04f78402))
+* **deps:** update docker.io/golang:1.27.1 docker digest to 162be52 ([#591](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/591)) ([5a7c8a0](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/5a7c8a020baaf3d40bd79dbe82f79f51e71868d6))
+
 ## [1.293.7](https://github.com/siutsin/k3s-apiserver-loadbalancer/compare/v1.293.6...v1.293.7) (2026-10-11)
 
 
