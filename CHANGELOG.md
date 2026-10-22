@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.293.9](https://github.com/siutsin/k3s-apiserver-loadbalancer/compare/v1.293.8...v1.293.9) (2026-10-21)
+
+
+### Miscellaneous
+
+* **deps:** update docker.io/golang docker tag to v1.27.2 ([#604](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/604)) ([44e2eb7](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/44e2eb7610a90a571e7cb64418fe8b472b312697))
+
 ## [1.293.8](https://github.com/siutsin/k3s-apiserver-loadbalancer/compare/v1.293.7...v1.293.8) (2026-10-17)
 
 
