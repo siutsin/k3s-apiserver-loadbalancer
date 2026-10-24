@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.293.10](https://github.com/siutsin/k3s-apiserver-loadbalancer/compare/v1.293.9...v1.293.10) (2026-10-24)
+
+
+### Miscellaneous
+
+* add vulnerability-only renovate config ([#627](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/627)) ([90999fa](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/90999fae84180f4395c015761b66568583184013))
+* **deps:** update dependency go to v1.27.3 ([#610](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/610)) ([eeb699d](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/eeb699d77cfbd9d58b4fd410aa49ddb96f142e01))
+* **deps:** update dependency golangci-lint to v2.15.0 ([#620](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/620)) ([af738b4](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/af738b42e598661691bc27a8926a5f237786ed6e))
+* **deps:** update docker.io/golang docker tag to v1.27.3 ([#612](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/612)) ([f44e818](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/f44e818979c04839b210f51ed5119deac7ebc4e1))
+* **deps:** update gcr.io/distroless/static:nonroot docker digest to 18f4cc2 ([#626](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/626)) ([6a34efb](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/6a34efbdb18bcf02c7a07f5af74af0ddb983bd21))
+* **deps:** update gcr.io/distroless/static:nonroot docker digest to d620678 ([#623](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/623)) ([e769719](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/e7697197accad55cff7fee6466fdd0089ad09e2e))
+* **deps:** update module github.com/google/cel-go to v0.30.0 [security] ([#617](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/617)) ([802eaac](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/802eaac73a9ef1f5531cf9d8eb2f8cfd8da962ff))
+* **deps:** update module go:sigs.k8s.io/controller-tools/cmd/controller-gen to v0.23.0 ([#621](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/621)) ([9e375ea](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/9e375eaa033131f26682fdb02d0671862896d3df))
+* **deps:** update module golang.org/x/net to v0.60.0 [security] ([#618](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/618)) ([8d369ec](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/8d369ec43754f08ec9e8851811aa97a37e994845))
+* reduce Renovate minimumReleaseAge to 1 day ([47ea9cb](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/47ea9cb6fe1e072962b879faaf49f8cca5eda5e1))
+* silence Renovate timestamp-optional warning ([#622](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/622)) ([2d07e8f](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/2d07e8fadacd88d1ae133f0861754951a492edab))
+* tier Renovate minimum release age (3 days routine, 1 day images) ([#614](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/614)) ([01a94a0](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/01a94a078d7e7fddcd46b456033115a125dd5564))
+* widen Renovate 1-day rule to helm and dockerfile ([#619](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/619)) ([03d7231](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/03d7231a92b663e24d4a9eba539476e1bd7cff9f))
+
 ## [1.293.9](https://github.com/siutsin/k3s-apiserver-loadbalancer/compare/v1.293.8...v1.293.9) (2026-10-21)
 
 
