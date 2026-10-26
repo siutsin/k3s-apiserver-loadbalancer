@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.293.11](https://github.com/siutsin/k3s-apiserver-loadbalancer/compare/v1.293.10...v1.293.11) (2026-10-26)
+
+
+### Miscellaneous
+
+* restore renovate.json5 policy, vulnerability fixes immediate ([#630](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/630)) ([68311b4](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/68311b489660730ab99a7b2013af50949df9fe11))
+
 ## [1.293.10](https://github.com/siutsin/k3s-apiserver-loadbalancer/compare/v1.293.9...v1.293.10) (2026-10-24)
 
 
