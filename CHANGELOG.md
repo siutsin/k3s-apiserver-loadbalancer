@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.293.12](https://github.com/siutsin/k3s-apiserver-loadbalancer/compare/v1.293.11...v1.293.12) (2026-10-28)
+
+
+### Miscellaneous
+
+* **deps:** update module golang.org/x/net to v0.62.0 [security] ([#641](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/641)) ([3a8d0c8](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/3a8d0c86a87a2daa00dfe6c11ab6421ddbae87ee))
+
 ## [1.293.11](https://github.com/siutsin/k3s-apiserver-loadbalancer/compare/v1.293.10...v1.293.11) (2026-10-26)
 
 
