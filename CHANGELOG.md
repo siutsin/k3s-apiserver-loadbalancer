@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.293.13](https://github.com/siutsin/k3s-apiserver-loadbalancer/compare/v1.293.12...v1.293.13) (2026-11-02)
+
+
+### Bug Fixes
+
+* **deps:** update kubernetes monorepo to v0.37.2 ([#650](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/650)) ([b76e0b0](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/b76e0b07c42139fc9a0afc5d3076987e500bd2fc))
+
+
+### Miscellaneous
+
+* **deps:** update dependency kubectl to v1.37.2 ([#649](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/649)) ([9efce4a](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/9efce4af1541dc25652dd9fb4fb7c72d8fb8a37d))
+* **deps:** update docker.io/golang:1.27.3 docker digest to 2920bb1 ([#644](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/644)) ([50c60d9](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/50c60d974bac2823ab74a6e590a0d9b11944eda9))
+* **deps:** update gcr.io/distroless/static:nonroot docker digest to 25ac8f0 ([#652](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/652)) ([d3737c6](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/d3737c64425fca9bf5e71bd11bac551b652bccc2))
+
 ## [1.293.12](https://github.com/siutsin/k3s-apiserver-loadbalancer/compare/v1.293.11...v1.293.12) (2026-10-28)
 
 
