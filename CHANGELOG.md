@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.293.14](https://github.com/siutsin/k3s-apiserver-loadbalancer/compare/v1.293.13...v1.293.14) (2026-11-07)
+
+
+### Miscellaneous
+
+* **deps:** update docker.io/golang:1.27.3 docker digest to e519d3b ([#659](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/659)) ([df0e019](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/df0e0199702dd58009c49a60abd6b04de018d9b1))
+
 ## [1.293.13](https://github.com/siutsin/k3s-apiserver-loadbalancer/compare/v1.293.12...v1.293.13) (2026-11-02)
 
 
