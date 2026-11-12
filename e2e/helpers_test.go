@@ -73,18 +73,6 @@ func loadImageToKindCluster(name string) error {
 	return err
 }
 
-// pullImage pulls a container image with the active container tool.
-func pullImage(name string) error {
-	if os.Getenv("CLUSTER_BACKEND") == "apple" {
-		cmd := exec.Command("container", "image", "pull", name)
-		_, err := run(cmd)
-		return err
-	}
-	cmd := exec.Command(containerTool(), "pull", name)
-	_, err := run(cmd)
-	return err
-}
-
 // containerTool returns the active local container runtime CLI.
 func containerTool() string {
 	containerTool := os.Getenv("CONTAINER_TOOL")
