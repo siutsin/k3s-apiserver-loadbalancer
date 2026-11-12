@@ -21,7 +21,10 @@ const metricsServiceName = "k3s-apiserver-loadbalancer-controller-manager-metric
 const metricsRoleBindingName = "k3s-apiserver-loadbalancer-metrics-binding"
 
 // metricsProbeImage is pinned (not :latest) so kubelet uses IfNotPresent
-// instead of repulling on every run.
+// instead of repulling on every run. The kind node pulls it: loading a
+// pulled multi-platform image into kind fails when Docker uses the
+// containerd image store, because the exported index references content
+// the host never pulled.
 const metricsProbeImage = "curlimages/curl:8.11.1"
 
 // projectImage is the operator image tag for e2e tests. It defaults to the
@@ -63,16 +66,6 @@ func setup() error {
 	fmt.Fprintln(os.Stderr, "loading the manager image on kind")
 	if err := loadImageToKindCluster(projectImage); err != nil {
 		return fmt.Errorf("failed to load image: %w", err)
-	}
-
-	fmt.Fprintln(os.Stderr, "pulling the metrics probe image")
-	if err := pullImage(metricsProbeImage); err != nil {
-		return fmt.Errorf("failed to pull metrics probe image: %w", err)
-	}
-
-	fmt.Fprintln(os.Stderr, "loading the metrics probe image on kind")
-	if err := loadImageToKindCluster(metricsProbeImage); err != nil {
-		return fmt.Errorf("failed to load metrics probe image: %w", err)
 	}
 
 	fmt.Fprintln(os.Stderr, "creating manager namespace")
