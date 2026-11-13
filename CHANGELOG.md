@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.293.16](https://github.com/siutsin/k3s-apiserver-loadbalancer/compare/v1.293.15...v1.293.16) (2026-11-13)
+
+
+### Bug Fixes
+
+* **e2e:** let the kind node pull the metrics probe image ([#668](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/668)) ([b08f99a](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/b08f99a5db44729750e324df66087d2065ffdae8))
+
+
+### Miscellaneous
+
+* **deps:** update docker.io/golang:1.27.4 docker digest to 5e8afd4 ([#672](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/672)) ([e6e424e](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/e6e424e7f0c23d9097eedff93c70d616f5d2b27e))
+* **deps:** update gcr.io/distroless/static:nonroot docker digest to aafe993 ([#670](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/670)) ([414337e](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/414337ea7bf7b80a80d7a0100a3b4b880657b641))
+* **deps:** update module go.opentelemetry.io/otel/sdk to v1.47.0 [security] ([#674](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/674)) ([08c6f39](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/08c6f39b561062e2697888dc63d16b3c95b23bfe))
+
 ## [1.293.15](https://github.com/siutsin/k3s-apiserver-loadbalancer/compare/v1.293.14...v1.293.15) (2026-11-11)
 
 
