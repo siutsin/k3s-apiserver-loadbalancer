@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.293.17](https://github.com/siutsin/k3s-apiserver-loadbalancer/compare/v1.293.16...v1.293.17) (2026-11-13)
+
+
+### Miscellaneous
+
+* **deps:** update dependency go to v1.27.4 ([#676](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/676)) ([3f03aab](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/3f03aab1ed8991d61eef17ec26c195ed3b9f58fd))
+
 ## [1.293.16](https://github.com/siutsin/k3s-apiserver-loadbalancer/compare/v1.293.15...v1.293.16) (2026-11-13)
 
 
