@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.293.18](https://github.com/siutsin/k3s-apiserver-loadbalancer/compare/v1.293.17...v1.293.18) (2026-11-23)
+
+
+### Bug Fixes
+
+* **deps:** update module sigs.k8s.io/controller-runtime to v0.25.3 ([#688](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/688)) ([b1932ab](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/b1932abe9d60f06242c1adc270c63a4f17e05e70))
+* drop invalid Renovate manager names ([#682](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/682)) ([d5ff57a](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/d5ff57a054272576c9ad963cbff23a0df0bdf940))
+
+
+### Miscellaneous
+
+* **deps:** update docker.io/golang:1.27.4 docker digest to 205c763 ([#685](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/685)) ([4c7bf7c](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/4c7bf7c53fc31617a932f3352bf4280f4ae9f542))
+* **deps:** update gcr.io/distroless/static:nonroot docker digest to 8ce6dd8 ([#696](https://github.com/siutsin/k3s-apiserver-loadbalancer/issues/696)) ([29aaec1](https://github.com/siutsin/k3s-apiserver-loadbalancer/commit/29aaec1975ed710ededd88b15fde3e3470eba848))
+
 ## [1.293.17](https://github.com/siutsin/k3s-apiserver-loadbalancer/compare/v1.293.16...v1.293.17) (2026-11-13)
 
 
